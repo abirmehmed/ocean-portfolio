@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Open Sea — WebGPU / TSL Procedural Ocean</title>
+<meta name="description" content="A real-time procedural open-sea scene rendered with WebGPU and Three.js TSL: five Gerstner waves, analytic swell normals, animated capillary FBM, sun glitter and a shared analytic sky." />
+<meta name="color-scheme" content="dark" />
+
+<style>
+  :root{
+    color-scheme: dark;
+    --panel-bg: rgba(10, 16, 24, 0.62);
+    --panel-border: rgba(255, 255, 255, 0.14);
+    --text: #e8f1f7;
+    --text-dim: #9db2c2;
+    --accent: #6fd0ff;
+    --accent-2: #ffd699;
+  }
+  *{ box-sizing: border-box; }
+  html, body{
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #05070a;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+  }
+
+  #app{
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  canvas{
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    outline: none;
+  }
+
+  /* ---------- Loading overlay ---------- */
+  #loading-overlay{
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    background: radial-gradient(ellipse at 50% 40%, #0c1620 0%, #04070b 75%);
+    z-index: 50;
+    transition: opacity 0.6s ease;
+  }
+  #loading-overlay.hidden{
+    opacity: 0;
+    pointer-events: none;
+  }
+  .spinner{
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: var(--accent);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  .loading-text{
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* ---------- Error overlay ---------- */
+  #error-overlay{
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: #05070a;
+    z-index: 60;
+  }
+  #error-overlay.visible{ display: flex; }
+  .error-card{
+    max-width: 520px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 28px 30px;
+    backdrop-filter: blur(10px);
+  }
+  .error-card h1{
+    margin: 0 0 10px;
+    font-size: 19px;
+    color: #ffb1b1;
+  }
+  .error-card p{
+    margin: 0 0 10px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-dim);
+  }
+  .error-card code{
+    background: rgba(255,255,255,0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  /* ---------- Control panel ---------- */
+  #panel{
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    width: 268px;
+    max-width: calc(100vw - 32px);
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 14px 16px 16px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 20;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  #panel.hidden{
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+  }
+  #panel h2{
+    margin: 0 0 10px;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .row{
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .row:last-of-type{ margin-bottom: 0; }
+  .row-head{
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .row-head span.val{
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  label{ cursor: pointer; }
+  input[type="range"]{
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.18);
+    outline: none;
+  }
+  input[type="range"]:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(111,208,255,0.7);
+  }
+  input[type="range"]::-moz-range-thumb{
+    width: 14px;
+    height: 14px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  #stats{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--panel-border);
+    font-size: 11px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  #stats b{ color: var(--text); font-weight: 600; }
+
+  .sound-btn{
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 5px 11px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .sound-btn:hover{ background: rgba(255,255,255,0.14); }
+  .sound-btn[aria-pressed="true"]{
+    background: rgba(111,208,255,0.22);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .sound-btn:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .sound-btn:disabled{
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .icon-btn{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-left: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text);
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  }
+  .icon-btn:hover, .icon-btn:focus-visible{
+    background: rgba(255,255,255,0.16);
+    border-color: rgba(111,208,255,0.55);
+    transform: translateY(-1px);
+  }
+  .icon-btn:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+  .icon-btn svg{ width: 17px; height: 17px; }
+
+  #settingsToggle svg{ transition: transform 0.45s ease; }
+  #settingsToggle:hover svg{ transform: rotate(35deg); }
+  #settingsToggle[aria-expanded="true"] svg{ transform: rotate(80deg); }
+
+  #themeToggle svg{
+    position: absolute;
+    top: 50%; left: 50%;
+    transition: opacity 0.4s ease, transform 0.5s ease;
+  }
+  #themeToggle .icon-sun{ transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; }
+  #themeToggle .icon-moon{ transform: translate(-50%, -50%) rotate(-90deg) scale(0.5); opacity: 0; }
+  #themeToggle[aria-pressed="true"] .icon-sun{ transform: translate(-50%, -50%) rotate(90deg) scale(0.5); opacity: 0; }
+  #themeToggle[aria-pressed="true"] .icon-moon{ transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; }
+
+  #credit{
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 20;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    pointer-events: none;
+    text-align: right;
+    line-height: 1.5;
+  }
+
+  #sr-live{
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* ---------- Portfolio page layered over the ocean ---------- */
+  #page{
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-section{
+    position: relative;
+    height: 100svh;
+    min-height: 480px;
+  }
+
+  .site-nav{
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px clamp(20px, 5vw, 56px);
+    background: rgba(6, 10, 15, 0.34);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    z-index: 5;
+  }
+  .brand, .nav-link{
+    background: none;
+    border: none;
+    font: inherit;
+    padding: 0;
+    cursor: pointer;
+  }
+  .brand{
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-size: 15px;
+    transition: color 0.2s ease;
+  }
+  .brand:hover, .brand:focus-visible{ color: var(--accent); }
+  .nav-links{ display: flex; align-items: center; }
+  .nav-link{
+    position: relative;
+    color: rgba(232, 241, 247, 0.78);
+    text-decoration: none;
+    font-size: 14px;
+    margin-left: 26px;
+    transition: color 0.2s ease;
+  }
+  .nav-link::after{
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -5px;
+    height: 1px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s ease;
+  }
+  .nav-link:hover, .nav-link:focus-visible{ color: var(--accent); }
+  .nav-link:hover::after, .nav-link:focus-visible::after{
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  .nav-link[aria-pressed="true"]{ color: var(--accent); }
+  .nav-link[aria-pressed="true"]::after{ transform: scaleX(1); transform-origin: left; }
+
+  /* One glassmorphic "stage": exactly one of these is .active at a time,
+     and switching slides/fades between them. */
+  .content-panel{
+    position: absolute;
+    left: clamp(20px, 5vw, 56px);
+    top: 50%;
+    max-width: 600px;
+    background: rgba(8, 13, 21, 0.4);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 22px;
+    padding: clamp(26px, 4vw, 42px);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+    opacity: 0;
+    transform: translate(28px, -50%);
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 0.8, 0.32, 1), visibility 0s linear 0.5s;
+  }
+  .content-panel.active{
+    opacity: 1;
+    transform: translate(0, -50%);
+    pointer-events: auto;
+    visibility: visible;
+    transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 0.8, 0.32, 1);
+  }
+  #panel-work{ max-width: 640px; }
+
+  .eyebrow{
+    margin: 0 0 14px;
+    font-size: 13px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .content-panel h1{
+    margin: 0 0 18px;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    line-height: 1.05;
+    font-weight: 700;
+  }
+  .content-panel h2{
+    margin: 0 0 14px;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+  .hero-tagline, .panel-body{
+    margin: 0;
+    font-size: clamp(0.98rem, 1.4vw, 1.1rem);
+    line-height: 1.6;
+    color: var(--text-dim);
+    max-width: 48ch;
+  }
+  .panel-body{ margin-bottom: 10px; }
+
+  .skill-tags{
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 0;
+    margin: 18px 0 0;
+  }
+  .skill-tags li{
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* Placeholder avatar — swap the .avatar-placeholder div for a real
+     <img src="your-photo.jpg" alt="Abir Dev"> and everything else (the
+     idle float + hover lift) keeps working unchanged. */
+  .avatar-float{
+    width: 108px;
+    height: 108px;
+    margin-bottom: 20px;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .avatar-float{ animation: floaty 4.5s ease-in-out infinite; }
+  }
+  @keyframes floaty{
+    0%, 100%{ transform: translateY(0); }
+    50%{ transform: translateY(-10px); }
+  }
+  .avatar-frame{
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.25);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.35);
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+  }
+  .avatar-frame:hover{
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 20px 42px rgba(0,0,0,0.45);
+  }
+  .avatar-placeholder{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #17334a, #0a1622);
+    color: var(--accent);
+    font-size: 32px;
+    font-weight: 700;
+  }
+  .avatar-frame img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Work carousel */
+  .carousel{ margin-top: 4px; }
+  .carousel-viewport{
+    overflow: hidden;
+    border-radius: 16px;
+  }
+  .carousel-track{
+    display: flex;
+    transition: transform 0.5s cubic-bezier(0.22, 0.8, 0.32, 1);
+  }
+  .carousel-slide{
+    flex: 0 0 100%;
+    box-sizing: border-box;
+    background: rgba(255,255,255,0.045);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .carousel-slide .tag{
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .carousel-slide h3{ margin: 0 0 8px; font-size: 1.15rem; }
+  .carousel-slide p{ margin: 0; color: var(--text-dim); font-size: 0.92rem; line-height: 1.55; }
+
+  .carousel-controls{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .carousel-arrow{
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.07);
+    color: var(--text);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .carousel-arrow:hover, .carousel-arrow:focus-visible{
+    background: rgba(255,255,255,0.16);
+    border-color: rgba(111,208,255,0.5);
+    transform: translateY(-1px);
+  }
+  .carousel-arrow:disabled{ opacity: 0.32; cursor: not-allowed; transform: none; }
+  .carousel-dots{ display: flex; gap: 8px; }
+  .carousel-dots button{
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.25);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .carousel-dots button.active{
+    background: var(--accent);
+    transform: scale(1.35);
+  }
+
+  .contact-email{
+    display: inline-block;
+    margin: 18px 0 26px;
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+  .contact-email:hover, .contact-email:focus-visible{ border-color: var(--accent); }
+  .social-links{ display: flex; gap: 18px; margin-bottom: 40px; }
+  .social-links a{
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 14px;
+  }
+  .social-links a:hover, .social-links a:focus-visible{ color: var(--accent); }
+  .footer-note{
+    color: rgba(255,255,255,0.35);
+    font-size: 12px;
+    margin: 0;
+  }
+
+  #panel, #credit{
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+
+  @media (max-width: 700px){
+    .nav-link{ margin-left: 16px; }
+  }
+
+  @media (max-width: 560px){
+    #panel{ width: calc(100vw - 32px); }
+    .content-panel{
+      left: 16px;
+      right: 16px;
+      max-width: none;
+      width: auto;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="app" role="application" aria-label="Real-time procedural open-sea scene. Drag to orbit the camera, pinch or scroll to zoom.">
+  <!-- WebGPURenderer attaches its canvas inside here at runtime -->
+</div>
+
+<div id="page">
+  <section id="hero" class="hero-section">
+    <nav class="site-nav">
+      <button class="brand" type="button" data-panel="home">Abir Dev</button>
+      <div class="nav-links">
+        <button class="nav-link" type="button" data-panel="about" aria-pressed="false">About</button>
+        <button class="nav-link" type="button" data-panel="work" aria-pressed="false">Work</button>
+        <button class="nav-link" type="button" data-panel="contact" aria-pressed="false">Contact</button>
+        <button id="themeToggle" class="icon-btn" type="button" aria-pressed="false" aria-label="Switch to night">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.2" />
+            <path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7" />
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z" />
+          </svg>
+        </button>
+        <button id="settingsToggle" class="icon-btn" type="button" aria-expanded="false" aria-controls="panel" aria-label="Open settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2" />
+            <path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.4-2.3.9a7.4 7.4 0 0 0-2.6-1.5L14 2.5h-4l-.5 2.5a7.4 7.4 0 0 0-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.4 2.3-.9c.76.66 1.64 1.17 2.6 1.5l.5 2.5h4l.5-2.5a7.4 7.4 0 0 0 2.6-1.5l2.3.9 2-3.4z" />
+          </svg>
+        </button>
+      </div>
+    </nav>
+
+    <div id="panel-home" class="content-panel active" data-panel-content="home">
+      <p class="eyebrow">Creative Developer</p>
+      <h1>Abir Dev</h1>
+      <p class="hero-tagline">
+        I design and build real-time, interactive experiences for the web —
+        like the ocean rendered live behind this text, running entirely on
+        WebGPU with no textures, images, or video.
+      </p>
+    </div>
+
+    <div id="panel-about" class="content-panel" data-panel-content="about">
+      <p class="eyebrow">About</p>
+      <!-- Swap this placeholder for a real photo:
+           <div class="avatar-frame"><img src="your-photo.jpg" alt="Abir Dev"></div> -->
+      <div class="avatar-float">
+        <div class="avatar-frame">
+          <div class="avatar-placeholder" aria-hidden="true">AD</div>
+        </div>
+      </div>
+      <p class="panel-body">
+        Replace this with a couple of sentences about who you are and what
+        you build. Keep it short — the work should do most of the talking.
+      </p>
+      <ul class="skill-tags">
+        <li>WebGPU</li>
+        <li>Three.js / TSL</li>
+        <li>Creative Coding</li>
+        <li>Real-time Graphics</li>
+        <li>Front-end Engineering</li>
+      </ul>
+    </div>
+
+    <div id="panel-work" class="content-panel" data-panel-content="work">
+      <p class="eyebrow">Selected Work</p>
+      <div class="carousel">
+        <div class="carousel-viewport">
+          <div class="carousel-track" id="carouselTrack">
+            <div class="carousel-slide">
+              <span class="tag">WebGPU</span>
+              <h3>Open Sea</h3>
+              <p>A real-time procedural ocean — Gerstner waves, analytic normals, TSL bloom, and a shared analytic sky. The page you're on right now.</p>
+            </div>
+            <div class="carousel-slide">
+              <span class="tag">Project Title</span>
+              <h3>Project Name</h3>
+              <p>One or two sentences describing the project, the stack, and what problem it solved.</p>
+            </div>
+            <div class="carousel-slide">
+              <span class="tag">Project Title</span>
+              <h3>Project Name</h3>
+              <p>One or two sentences describing the project, the stack, and what problem it solved.</p>
+            </div>
+            <div class="carousel-slide">
+              <span class="tag">Project Title</span>
+              <h3>Project Name</h3>
+              <p>One or two sentences describing the project, the stack, and what problem it solved.</p>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-controls">
+          <button id="carouselPrev" class="carousel-arrow" type="button" aria-label="Previous project">‹</button>
+          <div class="carousel-dots" id="carouselDots"></div>
+          <button id="carouselNext" class="carousel-arrow" type="button" aria-label="Next project">›</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-contact" class="content-panel" data-panel-content="contact">
+      <p class="eyebrow">Let's talk</p>
+      <h2>Get in touch</h2>
+      <p class="panel-body">Open to freelance work, collaborations, or just a chat about real-time graphics.</p>
+      <a class="contact-email" href="mailto:you@example.com">you@example.com</a>
+      <div class="social-links">
+        <a href="#">GitHub</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">Twitter / X</a>
+      </div>
+      <p class="footer-note">© 2026 Abir Dev. Ocean rendered in real time with WebGPU + Three.js TSL.</p>
+    </div>
+  </section>
+</div>
+
+<div id="loading-overlay">
+  <div class="spinner" aria-hidden="true"></div>
+  <div class="loading-text" id="loading-text">Requesting WebGPU adapter…</div>
+</div>
+
+<div id="error-overlay" role="alert">
+  <div class="error-card">
+    <h1 id="error-title">WebGPU is unavailable</h1>
+    <p id="error-body">This experience requires a browser and device that support WebGPU. No fallback renderer is used, so nothing further will be drawn.</p>
+    <p>Try the latest <code>Chrome</code>, <code>Edge</code>, or <code>Safari 18+</code> on a desktop or recent mobile device, and make sure hardware acceleration is enabled.</p>
+  </div>
+</div>
+
+<section id="panel" aria-label="Ocean scene settings" class="hidden">
+  <h2>Settings</h2>
+
+  <div class="row">
+    <div class="row-head">
+      <label for="seaState">Sea state</label>
+      <span class="val" id="seaStateVal">35%</span>
+    </div>
+    <input id="seaState" type="range" min="0" max="100" value="35" step="1" aria-valuetext="35 percent, moderate sea" />
+  </div>
+
+  <div class="row">
+    <div class="row-head">
+      <label for="timeOfDay">Time of day</label>
+      <span class="val" id="timeOfDayVal">12:00</span>
+    </div>
+    <input id="timeOfDay" type="range" min="0" max="24" value="12" step="0.05" aria-valuetext="12:00, midday" />
+  </div>
+
+  <div class="row">
+    <div class="row-head">
+      <label for="drift">Camera drift</label>
+      <span class="val" id="driftVal">20%</span>
+    </div>
+    <input id="drift" type="range" min="0" max="100" value="20" step="1" aria-valuetext="20 percent" />
+  </div>
+
+  <div class="row">
+    <div class="row-head">
+      <label for="rain">Rain</label>
+      <span class="val" id="rainVal">0%</span>
+    </div>
+    <input id="rain" type="range" min="0" max="100" value="0" step="1" aria-valuetext="0 percent, no rain" />
+  </div>
+
+  <div class="row" style="flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 0;">
+    <span class="row-head" style="margin: 0;">Sound</span>
+    <button id="soundToggle" type="button" aria-pressed="false" class="sound-btn">Sound: Off</button>
+  </div>
+
+  <div id="stats">
+    <span>FPS: <b id="fpsVal">--</b></span>
+    <span id="backendVal">WebGPU</span>
+  </div>
+</section>
+
+<div id="credit" aria-hidden="true">WebGPU · Three.js TSL<br/>drag to orbit · scroll to zoom</div>
+
+<div id="sr-live" role="status" aria-live="polite"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module" src="./main.js"></script>
+
+</body>
+</html>
