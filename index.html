@@ -385,9 +385,21 @@
     transform: translate(0, -50%);
     pointer-events: auto;
     visibility: visible;
-    transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 0.8, 0.32, 1);
+    transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 0.8, 0.32, 1),
+                border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .content-panel.active:hover{
+    border-color: rgba(111, 208, 255, 0.35);
+    box-shadow: 0 30px 74px rgba(0,0,0,0.45);
   }
   #panel-work{ max-width: 640px; }
+
+  /* Owns the idle up/down bob, kept on a separate element from
+     .content-panel so it never fights that element's own slide-in
+     transform. */
+  @media (prefers-reduced-motion: no-preference){
+    .panel-float{ animation: floaty 5.5s ease-in-out infinite; }
+  }
 
   .eyebrow{
     margin: 0 0 14px;
@@ -430,11 +442,23 @@
     padding: 6px 14px;
     font-size: 13px;
     color: var(--text-dim);
+    transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+  }
+  .skill-tags li:hover{
+    background: rgba(111, 208, 255, 0.12);
+    border-color: rgba(111, 208, 255, 0.4);
+    color: var(--text);
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .skill-tags li{ animation: floaty 4.8s ease-in-out infinite; }
+    .skill-tags li:nth-child(2){ animation-delay: 0.15s; }
+    .skill-tags li:nth-child(3){ animation-delay: 0.3s; }
+    .skill-tags li:nth-child(4){ animation-delay: 0.45s; }
+    .skill-tags li:nth-child(5){ animation-delay: 0.6s; }
+    .skill-tags li:nth-child(6){ animation-delay: 0.75s; }
   }
 
-  /* Placeholder avatar — swap the .avatar-placeholder div for a real
-     <img src="your-photo.jpg" alt="Abir Dev"> and everything else (the
-     idle float + hover lift) keeps working unchanged. */
+  /* Idle float + hover lift for the avatar photo. */
   .avatar-float{
     width: 108px;
     height: 108px;
@@ -446,6 +470,10 @@
   @keyframes floaty{
     0%, 100%{ transform: translateY(0); }
     50%{ transform: translateY(-10px); }
+  }
+  @keyframes floatySmall{
+    0%, 100%{ transform: translateY(0); }
+    50%{ transform: translateY(-4px); }
   }
   .avatar-frame{
     width: 100%;
@@ -460,17 +488,6 @@
     transform: translateY(-5px) scale(1.05);
     box-shadow: 0 20px 42px rgba(0,0,0,0.45);
   }
-  .avatar-placeholder{
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #17334a, #0a1622);
-    color: var(--accent);
-    font-size: 32px;
-    font-weight: 700;
-  }
   .avatar-frame img{
     width: 100%;
     height: 100%;
@@ -483,6 +500,8 @@
   .carousel-viewport{
     overflow: hidden;
     border-radius: 16px;
+    padding: 6px 0;
+    margin: -6px 0;
   }
   .carousel-track{
     display: flex;
@@ -495,6 +514,15 @@
     border: 1px solid var(--panel-border);
     border-radius: 16px;
     padding: 22px;
+    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .carousel-slide:hover{
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(111, 208, 255, 0.35);
+    box-shadow: 0 14px 32px rgba(0,0,0,0.3);
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .carousel-slide{ animation: floatySmall 4.2s ease-in-out infinite; }
   }
   .carousel-slide .tag{
     display: inline-block;
@@ -505,7 +533,14 @@
     margin-bottom: 10px;
   }
   .carousel-slide h3{ margin: 0 0 8px; font-size: 1.15rem; }
-  .carousel-slide p{ margin: 0; color: var(--text-dim); font-size: 0.92rem; line-height: 1.55; }
+  .carousel-slide p{ margin: 0 0 12px; color: var(--text-dim); font-size: 0.92rem; line-height: 1.55; }
+  .carousel-slide .demo-link{
+    display: inline-block;
+    font-size: 0.86rem;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a.demo-link:hover, a.demo-link:focus-visible{ text-decoration: underline; }
 
   .carousel-controls{
     display: flex;
@@ -598,7 +633,7 @@
 <div id="page">
   <section id="hero" class="hero-section">
     <nav class="site-nav">
-      <button class="brand" type="button" data-panel="home">Abir Dev</button>
+      <button class="brand" type="button" data-panel="home">Abir Mehmed</button>
       <div class="nav-links">
         <button class="nav-link" type="button" data-panel="about" aria-pressed="false">About</button>
         <button class="nav-link" type="button" data-panel="work" aria-pressed="false">Work</button>
@@ -622,83 +657,92 @@
     </nav>
 
     <div id="panel-home" class="content-panel active" data-panel-content="home">
-      <p class="eyebrow">Creative Developer</p>
-      <h1>Abir Dev</h1>
-      <p class="hero-tagline">
-        I design and build real-time, interactive experiences for the web —
-        like the ocean rendered live behind this text, running entirely on
-        WebGPU with no textures, images, or video.
-      </p>
+      <div class="panel-float">
+        <p class="eyebrow">Full-Stack Developer</p>
+        <h1>Abir Mehmed</h1>
+        <p class="hero-tagline">
+          I build full-stack web applications — from POS systems to
+          e-commerce platforms — with Laravel, React, and Node. Open to
+          freelance work and full-time roles. (The ocean behind this text?
+          Also mine — real-time WebGPU, built from scratch.)
+        </p>
+      </div>
     </div>
 
     <div id="panel-about" class="content-panel" data-panel-content="about">
-      <p class="eyebrow">About</p>
-      <!-- Swap this placeholder for a real photo:
-           <div class="avatar-frame"><img src="your-photo.jpg" alt="Abir Dev"></div> -->
-      <div class="avatar-float">
-        <div class="avatar-frame">
-          <div class="avatar-placeholder" aria-hidden="true">AD</div>
+      <div class="panel-float">
+        <p class="eyebrow">About</p>
+        <div class="avatar-float">
+          <div class="avatar-frame">
+            <img src="avatar.jpg" alt="Abir Mehmed" />
+          </div>
         </div>
+        <p class="panel-body">
+          Full-stack developer focused on shipping real, working products —
+          POS systems, e-commerce platforms, and interactive web experiences.
+          Comfortable across the stack, from Laravel/PHP backends to React
+          frontends. Currently taking on freelance projects and open to
+          full-time roles.
+        </p>
+        <ul class="skill-tags">
+          <li>Laravel / PHP</li>
+          <li>Livewire</li>
+          <li>React.js</li>
+          <li>Node.js / Express</li>
+          <li>Full-Stack Development</li>
+          <li>WebGPU / Three.js</li>
+        </ul>
       </div>
-      <p class="panel-body">
-        Replace this with a couple of sentences about who you are and what
-        you build. Keep it short — the work should do most of the talking.
-      </p>
-      <ul class="skill-tags">
-        <li>WebGPU</li>
-        <li>Three.js / TSL</li>
-        <li>Creative Coding</li>
-        <li>Real-time Graphics</li>
-        <li>Front-end Engineering</li>
-      </ul>
     </div>
 
     <div id="panel-work" class="content-panel" data-panel-content="work">
-      <p class="eyebrow">Selected Work</p>
-      <div class="carousel">
-        <div class="carousel-viewport">
-          <div class="carousel-track" id="carouselTrack">
-            <div class="carousel-slide">
-              <span class="tag">WebGPU</span>
-              <h3>Open Sea</h3>
-              <p>A real-time procedural ocean — Gerstner waves, analytic normals, TSL bloom, and a shared analytic sky. The page you're on right now.</p>
-            </div>
-            <div class="carousel-slide">
-              <span class="tag">Project Title</span>
-              <h3>Project Name</h3>
-              <p>One or two sentences describing the project, the stack, and what problem it solved.</p>
-            </div>
-            <div class="carousel-slide">
-              <span class="tag">Project Title</span>
-              <h3>Project Name</h3>
-              <p>One or two sentences describing the project, the stack, and what problem it solved.</p>
-            </div>
-            <div class="carousel-slide">
-              <span class="tag">Project Title</span>
-              <h3>Project Name</h3>
-              <p>One or two sentences describing the project, the stack, and what problem it solved.</p>
+      <div class="panel-float">
+        <p class="eyebrow">Selected Work</p>
+        <div class="carousel">
+          <div class="carousel-viewport">
+            <div class="carousel-track" id="carouselTrack">
+              <div class="carousel-slide">
+                <span class="tag">WebGPU</span>
+                <h3>Open Sea</h3>
+                <p>A real-time procedural ocean — Gerstner waves, analytic normals, TSL bloom, and a shared analytic sky. The page you're on right now.</p>
+                <span class="demo-link">This page →</span>
+              </div>
+              <div class="carousel-slide">
+                <span class="tag">Laravel · Livewire · PHP</span>
+                <h3>UniMart</h3>
+                <p>A full-stack POS (point of sale) application built with Laravel and Livewire.</p>
+                <a class="demo-link" href="https://uni-mart.onrender.com/" target="_blank" rel="noopener noreferrer">View demo →</a>
+              </div>
+              <div class="carousel-slide">
+                <span class="tag">React · Express</span>
+                <h3>Sonix Store</h3>
+                <p>A full-stack e-commerce store built with React.js on the frontend and Express on the backend.</p>
+                <a class="demo-link" href="https://sonix-store.vercel.app/" target="_blank" rel="noopener noreferrer">View demo →</a>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="carousel-controls">
-          <button id="carouselPrev" class="carousel-arrow" type="button" aria-label="Previous project">‹</button>
-          <div class="carousel-dots" id="carouselDots"></div>
-          <button id="carouselNext" class="carousel-arrow" type="button" aria-label="Next project">›</button>
+          <div class="carousel-controls">
+            <button id="carouselPrev" class="carousel-arrow" type="button" aria-label="Previous project">‹</button>
+            <div class="carousel-dots" id="carouselDots"></div>
+            <button id="carouselNext" class="carousel-arrow" type="button" aria-label="Next project">›</button>
+          </div>
         </div>
       </div>
     </div>
 
     <div id="panel-contact" class="content-panel" data-panel-content="contact">
-      <p class="eyebrow">Let's talk</p>
-      <h2>Get in touch</h2>
-      <p class="panel-body">Open to freelance work, collaborations, or just a chat about real-time graphics.</p>
-      <a class="contact-email" href="mailto:you@example.com">you@example.com</a>
-      <div class="social-links">
-        <a href="#">GitHub</a>
-        <a href="#">LinkedIn</a>
-        <a href="#">Twitter / X</a>
+      <div class="panel-float">
+        <p class="eyebrow">Let's talk</p>
+        <h2>Get in touch</h2>
+        <p class="panel-body">Open to freelance work, collaborations, or just a chat about real-time graphics.</p>
+        <a class="contact-email" href="mailto:abirmehmed@gmail.com">abirmehmed@gmail.com</a>
+        <div class="social-links">
+          <a href="#">GitHub</a>
+          <a href="#">LinkedIn</a>
+          <a href="#">Twitter / X</a>
+        </div>
+        <p class="footer-note">© 2026 Abir Mehmed. Ocean rendered in real time with WebGPU + Three.js TSL.</p>
       </div>
-      <p class="footer-note">© 2026 Abir Dev. Ocean rendered in real time with WebGPU + Three.js TSL.</p>
     </div>
   </section>
 </div>

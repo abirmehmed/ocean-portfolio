@@ -935,39 +935,75 @@ function updateRunState() {
 function onVisibilityChange() {
   tabVisible = !document.hidden;
   updateRunState();
-}
-
-// -------------------------------------------------------------------------
-// Panel switching: exactly one of home/about/work/contact is .active,
-// toggled from the nav. All panels share the same slide+fade transition
-// defined in CSS (.content-panel / .content-panel.active).
-// -------------------------------------------------------------------------
-function setupPanelNav() {
-  const navButtons = Array.from(document.querySelectorAll('[data-panel]'));
-  const panels = {};
-  document.querySelectorAll('.content-panel').forEach((el) => {
-    panels[el.dataset.panelContent] = el;
-  });
-
-  function switchPanel(name) {
-    if (!panels[name] || panels[name].classList.contains('active')) {
-      // Still sync button state even if it's a no-op switch.
-      navButtons.forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.panel === name)));
-      return;
-    }
-    Object.values(panels).forEach((el) => el.classList.remove('active'));
-    panels[name].classList.add('active');
-    navButtons.forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.panel === name)));
+  if (carouselApi) {
+    if (tabVisible) carouselApi.restart();
+    else carouselApi.stop();
   }
-
-  navButtons.forEach((btn) => {
-    btn.addEventListener('click', () => switchPanel(btn.dataset.panel));
-  });
 }
 
 // -------------------------------------------------------------------------
-// Work carousel: simple index-driven slide with prev/next + dots.
+// Panel switching: exactly one of home/about/work/contact is .active at a
+// time. Triggered by nav clicks AND by scroll-wheel (deliberately takes
+// over the wheel entirely — see the capture-phase listener below — since
+// OrbitControls also listens for wheel to zoom the ocean, and the two
+// can't both own it without fighting each other).
 // -------------------------------------------------------------------------
+const PANEL_ORDER = ['home', 'about', 'work', 'contact'];
+let currentPanelIndex = 0;
+const panelsMap = {};
+let panelNavButtons = [];
+
+function goToPanelIndex(index) {
+  const clamped = Math.max(0, Math.min(PANEL_ORDER.length - 1, index));
+  const name = PANEL_ORDER[clamped];
+  const target = panelsMap[name];
+  if (!target) return;
+
+  currentPanelIndex = clamped;
+  if (!target.classList.contains('active')) {
+    Object.values(panelsMap).forEach((el) => el.classList.remove('active'));
+    target.classList.add('active');
+  }
+  panelNavButtons.forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.panel === name)));
+
+  if (carouselApi) {
+    if (name === 'work') carouselApi.start(); else carouselApi.stop();
+  }
+}
+
+function setupPanelNav() {
+  panelNavButtons = Array.from(document.querySelectorAll('[data-panel]'));
+  document.querySelectorAll('.content-panel').forEach((el) => {
+    panelsMap[el.dataset.panelContent] = el;
+  });
+
+  panelNavButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const idx = PANEL_ORDER.indexOf(btn.dataset.panel);
+      if (idx !== -1) goToPanelIndex(idx);
+    });
+  });
+
+  let wheelCooldown = false;
+  window.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (wheelCooldown || Math.abs(e.deltaY) < 12) return;
+    wheelCooldown = true;
+    setTimeout(() => { wheelCooldown = false; }, 750);
+    goToPanelIndex(currentPanelIndex + (e.deltaY > 0 ? 1 : -1));
+  }, { passive: false, capture: true });
+
+  goToPanelIndex(0); // sync aria-pressed for the default (Home) tab
+}
+
+// -------------------------------------------------------------------------
+// Work carousel: index-driven slide with prev/next + dots, auto-advancing
+// every 3s while the Work panel is the active one (paused on hover/manual
+// interaction/hidden tab, and skipped entirely under reduced motion).
+// -------------------------------------------------------------------------
+let carouselApi = null;
+
 function setupCarousel() {
   const track = document.getElementById('carouselTrack');
   const dotsWrap = document.getElementById('carouselDots');
@@ -977,12 +1013,13 @@ function setupCarousel() {
 
   const slides = Array.from(track.children);
   let index = 0;
+  let autoplayTimer = null;
 
   slides.forEach((_, i) => {
     const dot = document.createElement('button');
     dot.type = 'button';
     dot.setAttribute('aria-label', `Go to project ${i + 1}`);
-    dot.addEventListener('click', () => { index = i; update(); });
+    dot.addEventListener('click', () => { index = i; update(); restart(); });
     dotsWrap.appendChild(dot);
   });
   const dots = Array.from(dotsWrap.children);
@@ -990,14 +1027,32 @@ function setupCarousel() {
   function update() {
     track.style.transform = `translateX(-${index * 100}%)`;
     dots.forEach((d, i) => d.classList.toggle('active', i === index));
-    prevBtn.disabled = index === 0;
-    nextBtn.disabled = index === slides.length - 1;
   }
 
-  prevBtn.addEventListener('click', () => { index = Math.max(0, index - 1); update(); });
-  nextBtn.addEventListener('click', () => { index = Math.min(slides.length - 1, index + 1); update(); });
+  function nextSlide() { index = (index + 1) % slides.length; update(); }
+  function prevSlide() { index = (index - 1 + slides.length) % slides.length; update(); }
+
+  function stop() {
+    if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
+  }
+  function start() {
+    stop();
+    if (prefersReducedMotion || slides.length < 2) return;
+    autoplayTimer = setInterval(nextSlide, 3000);
+  }
+  function restart() {
+    if (panelsMap.work && panelsMap.work.classList.contains('active')) start();
+  }
+
+  prevBtn.addEventListener('click', () => { prevSlide(); restart(); });
+  nextBtn.addEventListener('click', () => { nextSlide(); restart(); });
+
+  const viewport = track.closest('.carousel-viewport') || track.parentElement;
+  viewport.addEventListener('mouseenter', stop);
+  viewport.addEventListener('mouseleave', restart);
 
   update();
+  carouselApi = { start, stop, restart };
 }
 
 // Adaptive quality: if FPS sustains low, quietly reduce the DPR cap.
