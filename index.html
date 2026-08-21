@@ -392,7 +392,7 @@
     border-color: rgba(111, 208, 255, 0.35);
     box-shadow: 0 30px 74px rgba(0,0,0,0.45);
   }
-  #panel-work{ max-width: 640px; }
+  #panel-work{ max-width: min(900px, calc(100vw - 96px)); }
 
   /* Owns the idle up/down bob, kept on a separate element from
      .content-panel so it never fights that element's own slide-in
@@ -495,27 +495,25 @@
     display: block;
   }
 
-  /* Work carousel */
+  /* Work: 3 cards visible at once, auto-rotating (see main.js) */
   .carousel{ margin-top: 4px; }
-  .carousel-viewport{
-    overflow: hidden;
-    border-radius: 16px;
-    padding: 6px 0;
-    margin: -6px 0;
+  .work-rotator{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
   }
-  .carousel-track{
-    display: flex;
-    transition: transform 0.5s cubic-bezier(0.22, 0.8, 0.32, 1);
+  @media (max-width: 760px){
+    .work-rotator{ grid-template-columns: 1fr; }
   }
   .carousel-slide{
-    flex: 0 0 100%;
     box-sizing: border-box;
     background: rgba(255,255,255,0.045);
     border: 1px solid var(--panel-border);
     border-radius: 16px;
-    padding: 22px;
-    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    padding: 20px;
+    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.3s ease;
   }
+  .carousel-slide.swapping{ opacity: 0; }
   .carousel-slide:hover{
     background: rgba(255,255,255,0.08);
     border-color: rgba(111, 208, 255, 0.35);
@@ -523,6 +521,8 @@
   }
   @media (prefers-reduced-motion: no-preference){
     .carousel-slide{ animation: floatySmall 4.2s ease-in-out infinite; }
+    .carousel-slide:nth-child(2){ animation-delay: 0.25s; }
+    .carousel-slide:nth-child(3){ animation-delay: 0.5s; }
   }
   .carousel-slide .tag{
     display: inline-block;
@@ -541,6 +541,7 @@
     text-decoration: none;
   }
   a.demo-link:hover, a.demo-link:focus-visible{ text-decoration: underline; }
+  a.demo-link:not([href]){ cursor: default; }
 
   .carousel-controls{
     display: flex;
@@ -699,28 +700,7 @@
       <div class="panel-float">
         <p class="eyebrow">Selected Work</p>
         <div class="carousel">
-          <div class="carousel-viewport">
-            <div class="carousel-track" id="carouselTrack">
-              <div class="carousel-slide">
-                <span class="tag">WebGPU</span>
-                <h3>Open Sea</h3>
-                <p>A real-time procedural ocean — Gerstner waves, analytic normals, TSL bloom, and a shared analytic sky. The page you're on right now.</p>
-                <span class="demo-link">This page →</span>
-              </div>
-              <div class="carousel-slide">
-                <span class="tag">Laravel · Livewire · PHP</span>
-                <h3>UniMart</h3>
-                <p>A full-stack POS (point of sale) application built with Laravel and Livewire.</p>
-                <a class="demo-link" href="https://uni-mart.onrender.com/" target="_blank" rel="noopener noreferrer">View demo →</a>
-              </div>
-              <div class="carousel-slide">
-                <span class="tag">React · Express</span>
-                <h3>Sonix Store</h3>
-                <p>A full-stack e-commerce store built with React.js on the frontend and Express on the backend.</p>
-                <a class="demo-link" href="https://sonix-store.vercel.app/" target="_blank" rel="noopener noreferrer">View demo →</a>
-              </div>
-            </div>
-          </div>
+          <div class="work-rotator" id="workRotator"></div>
           <div class="carousel-controls">
             <button id="carouselPrev" class="carousel-arrow" type="button" aria-label="Previous project">‹</button>
             <div class="carousel-dots" id="carouselDots"></div>

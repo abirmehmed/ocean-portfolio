@@ -998,60 +998,120 @@ function setupPanelNav() {
 }
 
 // -------------------------------------------------------------------------
-// Work carousel: index-driven slide with prev/next + dots, auto-advancing
-// every 3s while the Work panel is the active one (paused on hover/manual
-// interaction/hidden tab, and skipped entirely under reduced motion).
+// Work: a data-driven set of project cards. Add more projects here later —
+// the rotator below adapts automatically, no HTML editing required.
 // -------------------------------------------------------------------------
+const PROJECTS = [
+  {
+    tag: 'WebGPU',
+    title: 'Open Sea',
+    description: "A real-time procedural ocean — Gerstner waves, analytic normals, TSL bloom, and a shared analytic sky. The page you're on right now.",
+    linkText: 'This page →',
+    href: null
+  },
+  {
+    tag: 'Laravel · Livewire · PHP',
+    title: 'UniMart',
+    description: 'A full-stack POS (point of sale) application built with Laravel and Livewire.',
+    linkText: 'View demo →',
+    href: 'https://uni-mart.onrender.com/'
+  },
+  {
+    tag: 'React · Express',
+    title: 'Sonix Store',
+    description: 'A full-stack e-commerce store built with React.js on the frontend and Express on the backend.',
+    linkText: 'View demo →',
+    href: 'https://sonix-store.vercel.app/'
+  }
+];
+
+// Shows up to 3 project cards at once, in fixed slots, cross-fading their
+// content on rotation rather than physically sliding — simpler and more
+// robust than an infinite-loop sliding track, and it scales cleanly to any
+// number of projects. Auto-rotates every 3s while the Work panel is active
+// (paused on hover/manual interaction/hidden tab, skipped under reduced
+// motion).
 let carouselApi = null;
 
 function setupCarousel() {
-  const track = document.getElementById('carouselTrack');
+  const rotator = document.getElementById('workRotator');
   const dotsWrap = document.getElementById('carouselDots');
   const prevBtn = document.getElementById('carouselPrev');
   const nextBtn = document.getElementById('carouselNext');
-  if (!track || !dotsWrap || !prevBtn || !nextBtn) return;
+  if (!rotator || !dotsWrap || !prevBtn || !nextBtn || PROJECTS.length === 0) return;
 
-  const slides = Array.from(track.children);
-  let index = 0;
+  const windowSize = Math.min(3, PROJECTS.length);
+  let startIndex = 0;
   let autoplayTimer = null;
 
-  slides.forEach((_, i) => {
+  const slotEls = [];
+  for (let i = 0; i < windowSize; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'carousel-slide';
+    slot.innerHTML = '<span class="tag"></span><h3></h3><p></p><a class="demo-link" target="_blank" rel="noopener noreferrer"></a>';
+    rotator.appendChild(slot);
+    slotEls.push(slot);
+  }
+
+  PROJECTS.forEach((_, i) => {
     const dot = document.createElement('button');
     dot.type = 'button';
-    dot.setAttribute('aria-label', `Go to project ${i + 1}`);
-    dot.addEventListener('click', () => { index = i; update(); restart(); });
+    dot.setAttribute('aria-label', `Show project ${i + 1}`);
+    dot.addEventListener('click', () => { startIndex = i; render(); restart(); });
     dotsWrap.appendChild(dot);
   });
   const dots = Array.from(dotsWrap.children);
 
-  function update() {
-    track.style.transform = `translateX(-${index * 100}%)`;
-    dots.forEach((d, i) => d.classList.toggle('active', i === index));
+  function fillSlot(slotEl, project) {
+    slotEl.querySelector('.tag').textContent = project.tag;
+    slotEl.querySelector('h3').textContent = project.title;
+    slotEl.querySelector('p').textContent = project.description;
+    const link = slotEl.querySelector('.demo-link');
+    link.textContent = project.linkText;
+    if (project.href) {
+      link.href = project.href;
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+    } else {
+      link.removeAttribute('href');
+      link.removeAttribute('target');
+      link.removeAttribute('rel');
+    }
   }
 
-  function nextSlide() { index = (index + 1) % slides.length; update(); }
-  function prevSlide() { index = (index - 1 + slides.length) % slides.length; update(); }
+  function render() {
+    slotEls.forEach((slot, i) => fillSlot(slot, PROJECTS[(startIndex + i) % PROJECTS.length]));
+    dots.forEach((d, i) => d.classList.toggle('active', i === startIndex));
+  }
+
+  function rotate(step) {
+    slotEls.forEach((el) => el.classList.add('swapping'));
+    setTimeout(() => {
+      startIndex = (startIndex + step + PROJECTS.length) % PROJECTS.length;
+      render();
+      slotEls.forEach((el) => el.classList.remove('swapping'));
+    }, 320);
+  }
 
   function stop() {
     if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
   }
   function start() {
     stop();
-    if (prefersReducedMotion || slides.length < 2) return;
-    autoplayTimer = setInterval(nextSlide, 3000);
+    if (prefersReducedMotion) return;
+    autoplayTimer = setInterval(() => rotate(1), 3000);
   }
   function restart() {
     if (panelsMap.work && panelsMap.work.classList.contains('active')) start();
   }
 
-  prevBtn.addEventListener('click', () => { prevSlide(); restart(); });
-  nextBtn.addEventListener('click', () => { nextSlide(); restart(); });
+  prevBtn.addEventListener('click', () => { rotate(-1); restart(); });
+  nextBtn.addEventListener('click', () => { rotate(1); restart(); });
 
-  const viewport = track.closest('.carousel-viewport') || track.parentElement;
-  viewport.addEventListener('mouseenter', stop);
-  viewport.addEventListener('mouseleave', restart);
+  rotator.addEventListener('mouseenter', stop);
+  rotator.addEventListener('mouseleave', restart);
 
-  update();
+  render();
   carouselApi = { start, stop, restart };
 }
 
