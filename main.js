@@ -1007,30 +1007,36 @@ const PROJECTS = [
     title: 'Open Sea',
     description: "A real-time procedural ocean — Gerstner waves, analytic normals, TSL bloom, and a shared analytic sky. The page you're on right now.",
     linkText: 'This page →',
-    href: null
+    href: null,
+    image: null
   },
   {
     tag: 'Laravel · Livewire · PHP',
     title: 'UniMart',
     description: 'A full-stack POS (point of sale) application built with Laravel and Livewire.',
     linkText: 'View demo →',
-    href: 'https://uni-mart.onrender.com/'
+    href: 'https://uni-mart.onrender.com/',
+    image: 'thumb-unimart.jpg'
   },
   {
     tag: 'React · Express',
     title: 'Sonix Store',
     description: 'A full-stack e-commerce store built with React.js on the frontend and Express on the backend.',
     linkText: 'View demo →',
-    href: 'https://sonix-store.vercel.app/'
+    href: 'https://sonix-store.vercel.app/',
+    image: 'thumb-sonix.jpg'
   }
 ];
 
-// Shows up to 3 project cards at once, in fixed slots, cross-fading their
-// content on rotation rather than physically sliding — simpler and more
-// robust than an infinite-loop sliding track, and it scales cleanly to any
-// number of projects. Auto-rotates every 3s while the Work panel is active
-// (paused on hover/manual interaction/hidden tab, skipped under reduced
-// motion).
+// A real sliding carousel — up to 3 cards physically move, with clones
+// padding both ends of the track so it loops seamlessly forward AND
+// backward (the standard infinite-carousel technique: slide past the
+// clones, then snap invisibly back into the real range with the
+// transition switched off for that one frame). Auto-advances every 3s
+// while the Work panel is active (paused on hover/manual interaction/
+// hidden tab, skipped under reduced motion). Shows 1 card at a time on
+// narrow screens, 3 on wider ones.
+const CAROUSEL_GAP = 14;
 let carouselApi = null;
 
 function setupCarousel() {
@@ -1038,35 +1044,43 @@ function setupCarousel() {
   const dotsWrap = document.getElementById('carouselDots');
   const prevBtn = document.getElementById('carouselPrev');
   const nextBtn = document.getElementById('carouselNext');
-  if (!rotator || !dotsWrap || !prevBtn || !nextBtn || PROJECTS.length === 0) return;
+  const N = PROJECTS.length;
+  if (!rotator || !dotsWrap || !prevBtn || !nextBtn || N === 0) return;
 
-  const windowSize = Math.min(3, PROJECTS.length);
-  let startIndex = 0;
-  let autoplayTimer = null;
+  const w = Math.min(window.innerWidth < 700 ? 1 : 3, N);
 
-  const slotEls = [];
-  for (let i = 0; i < windowSize; i++) {
-    const slot = document.createElement('div');
-    slot.className = 'carousel-slide';
-    slot.innerHTML = '<span class="tag"></span><h3></h3><p></p><a class="demo-link" target="_blank" rel="noopener noreferrer"></a>';
-    rotator.appendChild(slot);
-    slotEls.push(slot);
+  const track = document.createElement('div');
+  track.className = 'work-track';
+  rotator.appendChild(track);
+
+  function buildSlide() {
+    const slide = document.createElement('div');
+    slide.className = 'carousel-slide';
+    slide.style.flex = `0 0 calc((100% - ${(w - 1) * CAROUSEL_GAP}px) / ${w})`;
+    slide.innerHTML =
+      '<div class="card-thumb"><img alt="" /></div>' +
+      '<div class="card-body">' +
+      '<div class="card-head"><span class="tag"></span><span class="live-badge"><span class="status-dot" aria-hidden="true"></span>Live</span></div>' +
+      '<h3></h3><p></p><a class="demo-link" target="_blank" rel="noopener noreferrer"></a>' +
+      '</div>';
+    return slide;
   }
 
-  PROJECTS.forEach((_, i) => {
-    const dot = document.createElement('button');
-    dot.type = 'button';
-    dot.setAttribute('aria-label', `Show project ${i + 1}`);
-    dot.addEventListener('click', () => { startIndex = i; render(); restart(); });
-    dotsWrap.appendChild(dot);
-  });
-  const dots = Array.from(dotsWrap.children);
-
-  function fillSlot(slotEl, project) {
-    slotEl.querySelector('.tag').textContent = project.tag;
-    slotEl.querySelector('h3').textContent = project.title;
-    slotEl.querySelector('p').textContent = project.description;
-    const link = slotEl.querySelector('.demo-link');
+  function fillSlide(slide, project) {
+    const thumb = slide.querySelector('.card-thumb');
+    const img = slide.querySelector('.card-thumb img');
+    if (project.image) {
+      img.src = project.image;
+      img.alt = `${project.title} screenshot`;
+      thumb.style.display = '';
+    } else {
+      thumb.style.display = 'none';
+    }
+    slide.querySelector('.tag').textContent = project.tag;
+    slide.querySelector('.live-badge').style.visibility = project.href ? 'visible' : 'hidden';
+    slide.querySelector('h3').textContent = project.title;
+    slide.querySelector('p').textContent = project.description;
+    const link = slide.querySelector('.demo-link');
     link.textContent = project.linkText;
     if (project.href) {
       link.href = project.href;
@@ -1079,39 +1093,84 @@ function setupCarousel() {
     }
   }
 
-  function render() {
-    slotEls.forEach((slot, i) => fillSlot(slot, PROJECTS[(startIndex + i) % PROJECTS.length]));
-    dots.forEach((d, i) => d.classList.toggle('active', i === startIndex));
+  // Track order: [leading clones of the last w] + [real items] + [trailing clones of the first w]
+  const order = [];
+  for (let i = N - w; i < N; i++) order.push(i);
+  for (let i = 0; i < N; i++) order.push(i);
+  for (let i = 0; i < w; i++) order.push(i);
+
+  const slideEls = order.map((projectIndex) => {
+    const slide = buildSlide();
+    fillSlide(slide, PROJECTS[projectIndex]);
+    track.appendChild(slide);
+    return slide;
+  });
+
+  PROJECTS.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.setAttribute('aria-label', `Show project ${i + 1}`);
+    dot.addEventListener('click', () => { goTo(w + i); restart(); });
+    dotsWrap.appendChild(dot);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  let index = w; // first real item
+  let animating = false;
+  let autoplayTimer = null;
+
+  function stepPx() {
+    return slideEls[0].getBoundingClientRect().width + CAROUSEL_GAP;
   }
 
-  function rotate(step) {
-    slotEls.forEach((el) => el.classList.add('swapping'));
-    setTimeout(() => {
-      startIndex = (startIndex + step + PROJECTS.length) % PROJECTS.length;
-      render();
-      slotEls.forEach((el) => el.classList.remove('swapping'));
-    }, 320);
+  function apply(withTransition) {
+    track.style.transition = withTransition ? 'transform 0.6s cubic-bezier(0.22, 0.8, 0.32, 1)' : 'none';
+    track.style.transform = `translateX(-${index * stepPx()}px)`;
   }
+
+  function updateDots() {
+    const realIndex = ((index - w) % N + N) % N;
+    dots.forEach((d, i) => d.classList.toggle('active', i === realIndex));
+  }
+
+  function goTo(newIndex) {
+    if (animating || N <= 1) return;
+    animating = true;
+    index = newIndex;
+    apply(true);
+    updateDots();
+  }
+
+  track.addEventListener('transitionend', (e) => {
+    if (e.propertyName !== 'transform') return;
+    animating = false;
+    if (index >= w + N) { index -= N; apply(false); }
+    else if (index < w) { index += N; apply(false); }
+  });
+
+  function next() { goTo(index + 1); }
+  function prev() { goTo(index - 1); }
 
   function stop() {
     if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
   }
   function start() {
     stop();
-    if (prefersReducedMotion) return;
-    autoplayTimer = setInterval(() => rotate(1), 3000);
+    if (prefersReducedMotion || N <= 1) return;
+    autoplayTimer = setInterval(next, 3000);
   }
   function restart() {
     if (panelsMap.work && panelsMap.work.classList.contains('active')) start();
   }
 
-  prevBtn.addEventListener('click', () => { rotate(-1); restart(); });
-  nextBtn.addEventListener('click', () => { rotate(1); restart(); });
-
+  prevBtn.addEventListener('click', () => { prev(); restart(); });
+  nextBtn.addEventListener('click', () => { next(); restart(); });
   rotator.addEventListener('mouseenter', stop);
   rotator.addEventListener('mouseleave', restart);
+  window.addEventListener('resize', () => apply(false));
 
-  render();
+  apply(false);
+  updateDots();
   carouselApi = { start, stop, restart };
 }
 

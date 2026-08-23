@@ -3,9 +3,30 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Open Sea — WebGPU / TSL Procedural Ocean</title>
-<meta name="description" content="A real-time procedural open-sea scene rendered with WebGPU and Three.js TSL: five Gerstner waves, analytic swell normals, animated capillary FBM, sun glitter and a shared analytic sky." />
+<title>Abir Mehmed — Full-Stack Developer</title>
+<meta name="description" content="Full-stack developer building POS systems, e-commerce platforms, and real-time web experiences. Open to freelance work and full-time roles." />
 <meta name="color-scheme" content="dark" />
+
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+<link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png" />
+
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://abirmehmed.github.io/ocean-portfolio/" />
+<meta property="og:title" content="Abir Mehmed — Full-Stack Developer" />
+<meta property="og:description" content="Full-stack developer building POS systems, e-commerce platforms, and real-time web experiences. Open to freelance work and full-time roles." />
+<meta property="og:image" content="https://abirmehmed.github.io/ocean-portfolio/og-image.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Abir Mehmed — Full-Stack Developer" />
+<meta name="twitter:description" content="Full-stack developer building POS systems, e-commerce platforms, and real-time web experiences. Open to freelance work and full-time roles." />
+<meta name="twitter:image" content="https://abirmehmed.github.io/ocean-portfolio/og-image.jpg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
 
 <style>
   :root{
@@ -16,6 +37,7 @@
     --text-dim: #9db2c2;
     --accent: #6fd0ff;
     --accent-2: #ffd699;
+    --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   }
   *{ box-sizing: border-box; }
   html, body{
@@ -325,11 +347,12 @@
     cursor: pointer;
   }
   .brand{
+    font-family: var(--font-display);
     color: var(--text);
     text-decoration: none;
     font-weight: 600;
-    letter-spacing: 0.02em;
-    font-size: 15px;
+    letter-spacing: 0.01em;
+    font-size: 17px;
     transition: color 0.2s ease;
   }
   .brand:hover, .brand:focus-visible{ color: var(--accent); }
@@ -401,6 +424,48 @@
     .panel-float{ animation: floaty 5.5s ease-in-out infinite; }
   }
 
+  /* Entrance stagger: direct children of .panel-float fade/rise in with
+     a short delay per child whenever their panel becomes active, instead
+     of just appearing. Reverting (panel deactivated) fades them back out
+     via the same transition, so nothing snaps or flashes mid-exit.
+     .wave-text paragraphs opt OUT of this block-level stagger — their
+     .line children animate individually instead, see below. */
+  .panel-float > *:not(.wave-text){
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .content-panel.active .panel-float > *:not(.wave-text){
+    animation: panelEnter 0.55s cubic-bezier(0.22, 0.8, 0.32, 1) forwards;
+  }
+  .content-panel.active .panel-float > *:not(.wave-text):nth-child(1){ animation-delay: 0.05s; }
+  .content-panel.active .panel-float > *:not(.wave-text):nth-child(2){ animation-delay: 0.13s; }
+  .content-panel.active .panel-float > *:not(.wave-text):nth-child(3){ animation-delay: 0.21s; }
+  .content-panel.active .panel-float > *:not(.wave-text):nth-child(4){ animation-delay: 0.72s; }
+  .content-panel.active .panel-float > *:not(.wave-text):nth-child(5){ animation-delay: 0.80s; }
+  .content-panel.active .panel-float > *:not(.wave-text):nth-child(6){ animation-delay: 0.88s; }
+  @keyframes panelEnter{
+    to{ opacity: 1; transform: translateY(0); }
+  }
+
+  /* Wave text: each .line inside a .wave-text paragraph rises in on its
+     own delay, independent of the block-level stagger above — a real
+     line-by-line cascade rather than the whole paragraph moving as one
+     unit. */
+  .wave-text .line{
+    display: block;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .content-panel.active .wave-text .line{
+    animation: panelEnter 0.5s cubic-bezier(0.22, 0.8, 0.32, 1) forwards;
+  }
+  .content-panel.active .wave-text .line:nth-child(1){ animation-delay: 0.21s; }
+  .content-panel.active .wave-text .line:nth-child(2){ animation-delay: 0.31s; }
+  .content-panel.active .wave-text .line:nth-child(3){ animation-delay: 0.41s; }
+  .content-panel.active .wave-text .line:nth-child(4){ animation-delay: 0.51s; }
+
   .eyebrow{
     margin: 0 0 14px;
     font-size: 13px;
@@ -409,14 +474,18 @@
     color: var(--accent);
   }
   .content-panel h1{
+    font-family: var(--font-display);
     margin: 0 0 18px;
-    font-size: clamp(2.2rem, 5vw, 3.6rem);
-    line-height: 1.05;
+    font-size: clamp(2.4rem, 5.4vw, 3.9rem);
+    line-height: 1.03;
     font-weight: 700;
+    letter-spacing: -0.01em;
   }
   .content-panel h2{
+    font-family: var(--font-display);
     margin: 0 0 14px;
     font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 600;
   }
   .hero-tagline, .panel-body{
     margin: 0;
@@ -426,6 +495,34 @@
     max-width: 48ch;
   }
   .panel-body{ margin-bottom: 10px; }
+
+  .status-pill{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 7px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 999px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+  .status-dot{
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 8px rgba(74,222,128,0.75);
+    flex-shrink: 0;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .status-dot{ animation: pulseDot 2s ease-in-out infinite; }
+  }
+  @keyframes pulseDot{
+    0%, 100%{ opacity: 1; transform: scale(1); }
+    50%{ opacity: 0.5; transform: scale(0.82); }
+  }
 
   .skill-tags{
     list-style: none;
@@ -495,25 +592,27 @@
     display: block;
   }
 
-  /* Work: 3 cards visible at once, auto-rotating (see main.js) */
+  /* Work: sliding carousel (see main.js) — .work-rotator is the clipping
+     viewport, .work-track is the flex strip that actually slides. */
   .carousel{ margin-top: 4px; }
   .work-rotator{
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
+    overflow: hidden;
+    border-radius: 16px;
+    padding: 6px 0;
+    margin: -6px 0;
   }
-  @media (max-width: 760px){
-    .work-rotator{ grid-template-columns: 1fr; }
+  .work-track{
+    display: flex;
+    gap: 14px;
   }
   .carousel-slide{
     box-sizing: border-box;
     background: rgba(255,255,255,0.045);
     border: 1px solid var(--panel-border);
     border-radius: 16px;
-    padding: 20px;
-    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.3s ease;
+    overflow: hidden;
+    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   }
-  .carousel-slide.swapping{ opacity: 0; }
   .carousel-slide:hover{
     background: rgba(255,255,255,0.08);
     border-color: rgba(111, 208, 255, 0.35);
@@ -524,13 +623,46 @@
     .carousel-slide:nth-child(2){ animation-delay: 0.25s; }
     .carousel-slide:nth-child(3){ animation-delay: 0.5s; }
   }
+  .card-thumb{
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: rgba(255,255,255,0.03);
+  }
+  .card-thumb img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .card-body{ padding: 18px 20px 20px; }
+  .carousel-slide .card-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
   .carousel-slide .tag{
     display: inline-block;
     font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--accent);
-    margin-bottom: 10px;
+  }
+  .carousel-slide .live-badge{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #4ade80;
+    flex-shrink: 0;
+  }
+  .carousel-slide .live-badge .status-dot{
+    width: 6px;
+    height: 6px;
+    margin-top: 0;
   }
   .carousel-slide h3{ margin: 0 0 8px; font-size: 1.15rem; }
   .carousel-slide p{ margin: 0 0 12px; color: var(--text-dim); font-size: 0.92rem; line-height: 1.55; }
@@ -661,12 +793,11 @@
       <div class="panel-float">
         <p class="eyebrow">Full-Stack Developer</p>
         <h1>Abir Mehmed</h1>
-        <p class="hero-tagline">
-          I build full-stack web applications — from POS systems to
-          e-commerce platforms — with Laravel, React, and Node. Open to
-          freelance work and full-time roles. (The ocean behind this text?
-          Also mine — real-time WebGPU, built from scratch.)
-        </p>
+        <p class="hero-tagline wave-text"><span class="line">I build full-stack web applications — from POS systems to e-commerce platforms.</span><span class="line">Built with Laravel, React, and Node. Open to freelance work and full-time roles.</span><span class="line">(The ocean behind this text? Also mine — real-time WebGPU, built from scratch.)</span></p>
+        <div class="status-pill">
+          <span class="status-dot" aria-hidden="true"></span>
+          Available for freelance &amp; full-time work
+        </div>
       </div>
     </div>
 
@@ -678,13 +809,7 @@
             <img src="avatar.jpg" alt="Abir Mehmed" />
           </div>
         </div>
-        <p class="panel-body">
-          Full-stack developer focused on shipping real, working products —
-          POS systems, e-commerce platforms, and interactive web experiences.
-          Comfortable across the stack, from Laravel/PHP backends to React
-          frontends. Currently taking on freelance projects and open to
-          full-time roles.
-        </p>
+        <p class="panel-body wave-text"><span class="line">Full-stack developer focused on shipping real, working products —</span><span class="line">POS systems, e-commerce platforms, and interactive web experiences.</span><span class="line">Comfortable across the stack, from Laravel/PHP backends to React frontends. Currently taking on freelance projects and open to full-time roles.</span></p>
         <ul class="skill-tags">
           <li>Laravel / PHP</li>
           <li>Livewire</li>
@@ -717,7 +842,7 @@
         <p class="panel-body">Open to freelance work, collaborations, or just a chat about real-time graphics.</p>
         <a class="contact-email" href="mailto:abirmehmed@gmail.com">abirmehmed@gmail.com</a>
         <div class="social-links">
-          <a href="#">GitHub</a>
+          <a href="https://github.com/abirmehmed" target="_blank" rel="noopener noreferrer">GitHub</a>
           <a href="#">LinkedIn</a>
           <a href="#">Twitter / X</a>
         </div>
