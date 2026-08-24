@@ -330,9 +330,11 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     display: flex;
+    flex-wrap: wrap;
+    row-gap: 10px;
     align-items: center;
     justify-content: space-between;
-    padding: 22px clamp(20px, 5vw, 56px);
+    padding: 18px clamp(20px, 5vw, 56px);
     background: rgba(6, 10, 15, 0.34);
     backdrop-filter: blur(16px) saturate(1.15);
     -webkit-backdrop-filter: blur(16px) saturate(1.15);
@@ -356,7 +358,7 @@
     transition: color 0.2s ease;
   }
   .brand:hover, .brand:focus-visible{ color: var(--accent); }
-  .nav-links{ display: flex; align-items: center; }
+  .nav-links{ display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; row-gap: 8px; }
   .nav-link{
     position: relative;
     color: rgba(232, 241, 247, 0.78);
@@ -390,6 +392,8 @@
     left: clamp(20px, 5vw, 56px);
     top: 50%;
     max-width: 600px;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
     background: rgba(8, 13, 21, 0.4);
     backdrop-filter: blur(20px) saturate(1.2);
     -webkit-backdrop-filter: blur(20px) saturate(1.2);
@@ -416,6 +420,7 @@
     box-shadow: 0 30px 74px rgba(0,0,0,0.45);
   }
   #panel-work{ max-width: min(900px, calc(100vw - 96px)); }
+  #panel-contact{ max-width: min(620px, calc(100vw - 96px)); }
 
   /* Owns the idle up/down bob, kept on a separate element from
      .content-panel so it never fights that element's own slide-in
@@ -444,6 +449,8 @@
   .content-panel.active .panel-float > *:not(.wave-text):nth-child(4){ animation-delay: 0.72s; }
   .content-panel.active .panel-float > *:not(.wave-text):nth-child(5){ animation-delay: 0.80s; }
   .content-panel.active .panel-float > *:not(.wave-text):nth-child(6){ animation-delay: 0.88s; }
+  .content-panel.active .panel-float > *:not(.wave-text):nth-child(7){ animation-delay: 0.96s; }
+  .content-panel.active .panel-float > *:not(.wave-text):nth-child(8){ animation-delay: 1.04s; }
   @keyframes panelEnter{
     to{ opacity: 1; transform: translateY(0); }
   }
@@ -553,6 +560,27 @@
     .skill-tags li:nth-child(4){ animation-delay: 0.45s; }
     .skill-tags li:nth-child(5){ animation-delay: 0.6s; }
     .skill-tags li:nth-child(6){ animation-delay: 0.75s; }
+  }
+
+  .resume-link{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
+    padding: 10px 18px;
+    background: rgba(111, 208, 255, 0.12);
+    border: 1px solid rgba(111, 208, 255, 0.4);
+    border-radius: 999px;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .resume-link svg{ width: 15px; height: 15px; }
+  .resume-link:hover, .resume-link:focus-visible{
+    background: rgba(111, 208, 255, 0.22);
+    transform: translateY(-2px);
   }
 
   /* Idle float + hover lift for the avatar photo. */
@@ -675,6 +703,117 @@
   a.demo-link:hover, a.demo-link:focus-visible{ text-decoration: underline; }
   a.demo-link:not([href]){ cursor: default; }
 
+  .card-links{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .case-link{
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--text-dim);
+    font: inherit;
+    font-size: 0.86rem;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  }
+  .case-link:hover, .case-link:focus-visible{
+    color: var(--accent);
+    text-decoration-color: var(--accent);
+  }
+
+  /* Case-study modal */
+  .case-modal{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+  }
+  .case-modal.open{
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease;
+  }
+  .case-modal-backdrop{
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 7, 11, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .case-modal-dialog{
+    position: relative;
+    max-width: 520px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: rgba(10, 16, 24, 0.94);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 20px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    transform: translateY(16px) scale(0.97);
+    transition: transform 0.3s cubic-bezier(0.22, 0.8, 0.32, 1);
+  }
+  .case-modal.open .case-modal-dialog{
+    transform: translateY(0) scale(1);
+  }
+  .case-modal-close{
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(10, 16, 24, 0.8);
+    color: var(--text);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+    transition: background 0.2s ease;
+  }
+  .case-modal-close:hover, .case-modal-close:focus-visible{ background: rgba(255,255,255,0.16); }
+  .case-modal-thumb{
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 20px 20px 0 0;
+  }
+  .case-modal-thumb img{ width: 100%; height: 100%; object-fit: cover; display: block; }
+  .case-modal-body{ padding: 24px 26px 28px; }
+  .case-modal-body .tag{
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .case-modal-body h3{
+    font-family: var(--font-display);
+    margin: 0 0 10px;
+    font-size: 1.5rem;
+  }
+  .case-modal-body p{ margin: 0 0 18px; color: var(--text-dim); line-height: 1.6; font-size: 0.95rem; }
+  .case-modal-body h4{
+    margin: 0 0 10px;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .case-modal-body ul{ margin: 0 0 20px; padding-left: 20px; color: var(--text); font-size: 0.92rem; line-height: 1.7; }
+  .case-modal-body ul li{ margin-bottom: 4px; }
+  .case-modal-body .demo-link{ font-size: 0.95rem; }
+
   .carousel-controls{
     display: flex;
     align-items: center;
@@ -716,22 +855,102 @@
     transform: scale(1.35);
   }
 
+  .contact-form{ margin: 6px 0 4px; }
+  .form-row{ margin-bottom: 14px; }
+  .form-row label{
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .form-row input, .form-row textarea{
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 10px;
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    resize: vertical;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .form-row input:focus, .form-row textarea:focus{
+    outline: none;
+    border-color: rgba(111, 208, 255, 0.55);
+    background: rgba(255,255,255,0.08);
+  }
+  .form-honeypot{
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .form-submit{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 22px;
+    background: rgba(111, 208, 255, 0.16);
+    border: 1px solid rgba(111, 208, 255, 0.45);
+    border-radius: 999px;
+    color: var(--accent);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .form-submit:hover, .form-submit:focus-visible{
+    background: rgba(111, 208, 255, 0.28);
+    transform: translateY(-2px);
+  }
+  .form-submit:disabled{ opacity: 0.6; cursor: not-allowed; transform: none; }
+  .form-status{
+    margin: 10px 0 0;
+    font-size: 13px;
+    min-height: 1.2em;
+  }
+  .form-status.success{ color: #4ade80; }
+  .form-status.error{ color: #f87171; }
+  .form-status.pending{ color: var(--text-dim); }
+
+  .contact-or{
+    margin: 8px 0 6px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
   .contact-email{
     display: inline-block;
-    margin: 18px 0 26px;
-    font-size: clamp(1.3rem, 3vw, 1.8rem);
+    margin: 0 0 20px;
+    font-size: clamp(1.05rem, 2vw, 1.3rem);
     color: var(--accent);
     text-decoration: none;
     border-bottom: 1px solid transparent;
   }
   .contact-email:hover, .contact-email:focus-visible{ border-color: var(--accent); }
-  .social-links{ display: flex; gap: 18px; margin-bottom: 40px; }
+  .social-links{ display: flex; gap: 12px; margin-bottom: 40px; }
   .social-links a{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.06);
     color: var(--text-dim);
-    text-decoration: none;
-    font-size: 14px;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   }
-  .social-links a:hover, .social-links a:focus-visible{ color: var(--accent); }
+  .social-links a svg{ width: 18px; height: 18px; }
+  .social-links a:hover, .social-links a:focus-visible{
+    background: rgba(111, 208, 255, 0.14);
+    border-color: rgba(111, 208, 255, 0.45);
+    color: var(--accent);
+    transform: translateY(-2px);
+  }
   .footer-note{
     color: rgba(255,255,255,0.35);
     font-size: 12px;
@@ -818,6 +1037,12 @@
           <li>Full-Stack Development</li>
           <li>WebGPU / Three.js</li>
         </ul>
+        <a class="resume-link" href="resume.pdf" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M4 19h16" />
+          </svg>
+          Download Resume
+        </a>
       </div>
     </div>
 
@@ -840,16 +1065,54 @@
         <p class="eyebrow">Let's talk</p>
         <h2>Get in touch</h2>
         <p class="panel-body">Open to freelance work, collaborations, or just a chat about real-time graphics.</p>
+
+        <form id="contactForm" class="contact-form" novalidate>
+          <div class="form-row">
+            <label for="cf-name">Name</label>
+            <input type="text" id="cf-name" name="name" autocomplete="name" required />
+          </div>
+          <div class="form-row">
+            <label for="cf-email">Email</label>
+            <input type="email" id="cf-email" name="email" autocomplete="email" required />
+          </div>
+          <div class="form-row">
+            <label for="cf-message">Message</label>
+            <textarea id="cf-message" name="message" rows="4" required></textarea>
+          </div>
+          <input type="text" name="_honey" class="form-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <button type="submit" class="form-submit">Send message</button>
+          <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+        </form>
+
+        <p class="contact-or">or email directly</p>
         <a class="contact-email" href="mailto:abirmehmed@gmail.com">abirmehmed@gmail.com</a>
         <div class="social-links">
-          <a href="https://github.com/abirmehmed" target="_blank" rel="noopener noreferrer">GitHub</a>
-          <a href="#">LinkedIn</a>
-          <a href="#">Twitter / X</a>
+          <a href="https://github.com/abirmehmed" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M8 0C3.582 0 0 3.672 0 8.203c0 3.623 2.292 6.699 5.471 7.783.4.075.546-.178.546-.396 0-.194-.007-.71-.01-1.394-2.226.495-2.696-1.1-2.696-1.1-.363-.948-.888-1.2-.888-1.2-.726-.508.055-.499.055-.499.803.058 1.225.845 1.225.845.714 1.253 1.873.891 2.328.682.074-.53.28-.891.509-1.096-1.776-.207-3.644-.911-3.644-4.054 0-.895.312-1.628.823-2.201-.082-.208-.357-1.042.079-2.17 0 0 .672-.222 2.2.84A7.485 7.485 0 018 3.967c.68.003 1.364.094 2.003.276 1.527-1.062 2.198-.841 2.198-.841.437 1.129.161 1.963.08 2.17.512.574.822 1.307.822 2.202 0 3.15-1.871 3.844-3.653 4.048.288.253.543.753.543 1.519 0 1.095-.01 1.98-.01 2.25 0 .219.144.474.55.394a8.031 8.031 0 003.96-2.989A8.337 8.337 0 0016 8.203C16 3.672 12.418 0 8 0z" />
+            </svg>
+          </a>
         </div>
         <p class="footer-note">© 2026 Abir Mehmed. Ocean rendered in real time with WebGPU + Three.js TSL.</p>
       </div>
     </div>
   </section>
+</div>
+
+<div id="caseModal" class="case-modal" aria-hidden="true">
+  <div class="case-modal-backdrop" data-close></div>
+  <div class="case-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="caseModalTitle">
+    <button class="case-modal-close" type="button" aria-label="Close" data-close>&times;</button>
+    <div class="case-modal-thumb"><img alt="" /></div>
+    <div class="case-modal-body">
+      <span class="tag" id="caseModalTag"></span>
+      <h3 id="caseModalTitle"></h3>
+      <p id="caseModalDesc"></p>
+      <h4>Key features</h4>
+      <ul id="caseModalFeatures"></ul>
+      <a id="caseModalLink" class="demo-link" target="_blank" rel="noopener noreferrer"></a>
+    </div>
+  </div>
 </div>
 
 <div id="loading-overlay">
