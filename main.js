@@ -950,7 +950,7 @@ function onVisibilityChange() {
 // OrbitControls also listens for wheel to zoom the ocean, and the two
 // can't both own it without fighting each other).
 // -------------------------------------------------------------------------
-const PANEL_ORDER = ['home', 'about', 'work', 'contact'];
+const PANEL_ORDER = ['home', 'about', 'skills', 'work', 'contact'];
 let currentPanelIndex = 0;
 const panelsMap = {};
 let panelNavButtons = [];
@@ -1048,6 +1048,15 @@ const PROJECTS = [
       'Customer ratings and review counts',
       'Cart and checkout flow'
     ]
+  },
+  {
+    tag: 'Coming Soon',
+    title: 'Next Project',
+    description: 'Something new is in the works — check back soon, or ask me about it directly.',
+    linkText: null,
+    href: null,
+    image: null,
+    features: []
   }
 ];
 
@@ -1106,7 +1115,12 @@ function setupCarousel() {
     slide.querySelector('p').textContent = project.description;
     slide.querySelector('.case-link').addEventListener('click', () => openCaseModal(project));
     const link = slide.querySelector('.demo-link');
-    link.textContent = project.linkText;
+    if (!project.linkText) {
+      link.style.display = 'none';
+    } else {
+      link.style.display = '';
+      link.textContent = project.linkText;
+    }
     if (project.href) {
       link.href = project.href;
       link.setAttribute('target', '_blank');

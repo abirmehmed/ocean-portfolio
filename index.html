@@ -420,6 +420,7 @@
     box-shadow: 0 30px 74px rgba(0,0,0,0.45);
   }
   #panel-work{ max-width: min(900px, calc(100vw - 96px)); }
+  #panel-skills{ max-width: min(760px, calc(100vw - 96px)); }
   #panel-contact{ max-width: min(620px, calc(100vw - 96px)); }
 
   /* Owns the idle up/down bob, kept on a separate element from
@@ -503,6 +504,42 @@
   }
   .panel-body{ margin-bottom: 10px; }
 
+  .hero-cta{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .cta-primary, .cta-secondary{
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+  .cta-primary{
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: #0a1420;
+  }
+  .cta-primary:hover, .cta-primary:focus-visible{
+    transform: translateY(-2px);
+    background: #8adcff;
+  }
+  .cta-secondary{
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--text);
+  }
+  .cta-secondary:hover, .cta-secondary:focus-visible{
+    transform: translateY(-2px);
+    background: rgba(255,255,255,0.13);
+  }
+
   .status-pill{
     display: inline-flex;
     align-items: center;
@@ -531,36 +568,59 @@
     50%{ opacity: 0.5; transform: scale(0.82); }
   }
 
-  .skill-tags{
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
+  /* Skills panel — one flat grid of equal-size tiles. Deliberately NOT
+     grouped into per-category boxes: with different item counts per
+     category, boxed groups end up different heights and read as
+     mismatched. A uniform grid sidesteps that entirely. */
+  .skills-tiles{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
     gap: 10px;
-    padding: 0;
-    margin: 18px 0 0;
+    margin-top: 4px;
   }
-  .skill-tags li{
-    background: rgba(255,255,255,0.06);
+  .skill-tile{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.045);
     border: 1px solid var(--panel-border);
-    border-radius: 999px;
-    padding: 6px 14px;
-    font-size: 13px;
-    color: var(--text-dim);
-    transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
-  }
-  .skill-tags li:hover{
-    background: rgba(111, 208, 255, 0.12);
-    border-color: rgba(111, 208, 255, 0.4);
+    border-radius: 12px;
+    font-size: 14px;
     color: var(--text);
+    box-sizing: border-box;
+    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .skill-tile:hover{
+    background: rgba(255,255,255,0.09);
+    border-color: rgba(111, 208, 255, 0.35);
+    box-shadow: 0 10px 26px rgba(0,0,0,0.3);
   }
   @media (prefers-reduced-motion: no-preference){
-    .skill-tags li{ animation: floaty 4.8s ease-in-out infinite; }
-    .skill-tags li:nth-child(2){ animation-delay: 0.15s; }
-    .skill-tags li:nth-child(3){ animation-delay: 0.3s; }
-    .skill-tags li:nth-child(4){ animation-delay: 0.45s; }
-    .skill-tags li:nth-child(5){ animation-delay: 0.6s; }
-    .skill-tags li:nth-child(6){ animation-delay: 0.75s; }
+    .skill-tile{ animation: floatySmall 4.2s ease-in-out infinite; }
+    .skill-tile:nth-child(2n){ animation-delay: 0.18s; }
+    .skill-tile:nth-child(3n){ animation-delay: 0.34s; }
   }
+  .skill-dot{
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .skill-dot.backend{ background: var(--accent); }
+  .skill-dot.frontend{ background: var(--accent-2); }
+  .skill-dot.other{ background: #7ee787; }
+
+  .skills-legend{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .skills-legend span{ display: inline-flex; align-items: center; gap: 7px; }
+  .skills-legend .skill-dot{ width: 7px; height: 7px; }
 
   .resume-link{
     display: inline-flex;
@@ -856,6 +916,14 @@
   }
 
   .contact-form{ margin: 6px 0 4px; }
+  .form-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 12px;
+  }
+  @media (max-width: 400px){
+    .form-grid{ grid-template-columns: 1fr; }
+  }
   .form-row{ margin-bottom: 14px; }
   .form-row label{
     display: block;
@@ -987,7 +1055,9 @@
     <nav class="site-nav">
       <button class="brand" type="button" data-panel="home">Abir Mehmed</button>
       <div class="nav-links">
+        <button class="nav-link" type="button" data-panel="home" aria-pressed="true">Home</button>
         <button class="nav-link" type="button" data-panel="about" aria-pressed="false">About</button>
+        <button class="nav-link" type="button" data-panel="skills" aria-pressed="false">Skills</button>
         <button class="nav-link" type="button" data-panel="work" aria-pressed="false">Work</button>
         <button class="nav-link" type="button" data-panel="contact" aria-pressed="false">Contact</button>
         <button id="themeToggle" class="icon-btn" type="button" aria-pressed="false" aria-label="Switch to night">
@@ -1013,6 +1083,10 @@
         <p class="eyebrow">Full-Stack Developer</p>
         <h1>Abir Mehmed</h1>
         <p class="hero-tagline wave-text"><span class="line">I build full-stack web applications — from POS systems to e-commerce platforms.</span><span class="line">Built with Laravel, React, and Node. Open to freelance work and full-time roles.</span><span class="line">(The ocean behind this text? Also mine — real-time WebGPU, built from scratch.)</span></p>
+        <div class="hero-cta">
+          <button type="button" class="cta-primary" data-panel="work">View my work</button>
+          <button type="button" class="cta-secondary" data-panel="contact">Get in touch</button>
+        </div>
         <div class="status-pill">
           <span class="status-dot" aria-hidden="true"></span>
           Available for freelance &amp; full-time work
@@ -1029,20 +1103,36 @@
           </div>
         </div>
         <p class="panel-body wave-text"><span class="line">Full-stack developer focused on shipping real, working products —</span><span class="line">POS systems, e-commerce platforms, and interactive web experiences.</span><span class="line">Comfortable across the stack, from Laravel/PHP backends to React frontends. Currently taking on freelance projects and open to full-time roles.</span></p>
-        <ul class="skill-tags">
-          <li>Laravel / PHP</li>
-          <li>Livewire</li>
-          <li>React.js</li>
-          <li>Node.js / Express</li>
-          <li>Full-Stack Development</li>
-          <li>WebGPU / Three.js</li>
-        </ul>
         <a class="resume-link" href="resume.pdf" download>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M4 19h16" />
           </svg>
           Download Resume
         </a>
+      </div>
+    </div>
+
+    <div id="panel-skills" class="content-panel" data-panel-content="skills">
+      <div class="panel-float">
+        <p class="eyebrow">Skills</p>
+        <div class="skills-tiles">
+          <div class="skill-tile"><span class="skill-dot backend"></span>Laravel</div>
+          <div class="skill-tile"><span class="skill-dot backend"></span>PHP</div>
+          <div class="skill-tile"><span class="skill-dot backend"></span>Livewire</div>
+          <div class="skill-tile"><span class="skill-dot backend"></span>Node.js</div>
+          <div class="skill-tile"><span class="skill-dot backend"></span>Express</div>
+          <div class="skill-tile"><span class="skill-dot frontend"></span>React.js</div>
+          <div class="skill-tile"><span class="skill-dot frontend"></span>JavaScript</div>
+          <div class="skill-tile"><span class="skill-dot frontend"></span>HTML / CSS</div>
+          <div class="skill-tile"><span class="skill-dot other"></span>WebGPU</div>
+          <div class="skill-tile"><span class="skill-dot other"></span>Three.js</div>
+          <div class="skill-tile"><span class="skill-dot other"></span>Git</div>
+        </div>
+        <div class="skills-legend">
+          <span><span class="skill-dot backend"></span>Backend</span>
+          <span><span class="skill-dot frontend"></span>Frontend</span>
+          <span><span class="skill-dot other"></span>Graphics &amp; Tools</span>
+        </div>
       </div>
     </div>
 
@@ -1067,13 +1157,15 @@
         <p class="panel-body">Open to freelance work, collaborations, or just a chat about real-time graphics.</p>
 
         <form id="contactForm" class="contact-form" novalidate>
-          <div class="form-row">
-            <label for="cf-name">Name</label>
-            <input type="text" id="cf-name" name="name" autocomplete="name" required />
-          </div>
-          <div class="form-row">
-            <label for="cf-email">Email</label>
-            <input type="email" id="cf-email" name="email" autocomplete="email" required />
+          <div class="form-grid">
+            <div class="form-row">
+              <label for="cf-name">Name</label>
+              <input type="text" id="cf-name" name="name" autocomplete="name" required />
+            </div>
+            <div class="form-row">
+              <label for="cf-email">Email</label>
+              <input type="email" id="cf-email" name="email" autocomplete="email" required />
+            </div>
           </div>
           <div class="form-row">
             <label for="cf-message">Message</label>
