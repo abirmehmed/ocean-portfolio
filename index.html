@@ -68,6 +68,22 @@
   }
 
   /* ---------- Loading overlay ---------- */
+  /* Graceful WebGPU fallback: a static gradient stands in for the canvas,
+     and controls that only make sense with a live ocean are hidden —
+     everything else (nav, panels, carousel, contact form) still works. */
+  body.webgpu-unavailable #app{
+    background:
+      radial-gradient(ellipse at 50% 22%, #123244 0%, transparent 60%),
+      linear-gradient(180deg, #16303f 0%, #0a1622 55%, #05090f 100%);
+  }
+  body.webgpu-unavailable #credit,
+  body.webgpu-unavailable #settingsToggle,
+  body.webgpu-unavailable #themeToggle,
+  body.webgpu-unavailable #panel,
+  body.webgpu-unavailable #panelBackdrop{
+    display: none !important;
+  }
+
   #loading-overlay{
     position: fixed;
     inset: 0;
@@ -139,12 +155,33 @@
   }
 
   /* ---------- Control panel ---------- */
+  .panel-backdrop{
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    background: rgba(4, 7, 11, 0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+  }
+  .panel-backdrop.visible{
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.3s ease;
+  }
+
   #panel{
     position: fixed;
     left: 16px;
     bottom: 16px;
     width: 268px;
     max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 14px;
@@ -154,6 +191,10 @@
     z-index: 20;
     transition: opacity 0.4s ease, transform 0.4s ease;
   }
+  #panel::-webkit-scrollbar{ width: 6px; }
+  #panel::-webkit-scrollbar-track{ background: transparent; }
+  #panel::-webkit-scrollbar-thumb{ background: rgba(255,255,255,0.18); border-radius: 999px; }
+  #panel{ scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.22) transparent; }
   #panel.hidden{
     opacity: 0;
     transform: translateY(8px);
@@ -415,6 +456,15 @@
     transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 0.8, 0.32, 1),
                 border-color 0.3s ease, box-shadow 0.3s ease;
   }
+  .content-panel::-webkit-scrollbar{ width: 6px; }
+  .content-panel::-webkit-scrollbar-track{ background: transparent; }
+  .content-panel::-webkit-scrollbar-thumb{
+    background: rgba(255,255,255,0.18);
+    border-radius: 999px;
+  }
+  .content-panel::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,0.3); }
+  .content-panel{ scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.22) transparent; }
+
   .content-panel.active:hover{
     border-color: rgba(111, 208, 255, 0.35);
     box-shadow: 0 30px 74px rgba(0,0,0,0.45);
@@ -1220,6 +1270,7 @@
   </div>
 </div>
 
+<div id="panelBackdrop" class="panel-backdrop"></div>
 <section id="panel" aria-label="Ocean scene settings" class="hidden">
   <h2>Settings</h2>
 

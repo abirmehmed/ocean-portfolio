@@ -69,14 +69,21 @@ function setLoadingText(msg) {
 }
 
 // -----------------------------------------------------------------------
-// Hard WebGPU gate — deliberately no silent fallback rendering path.
+// Graceful WebGPU fallback: rather than blocking the whole page, an
+// unsupported browser still gets the full portfolio (nav, all panels,
+// carousel, contact form, case-study modals) — just without the live
+// ocean render, which is swapped for a static gradient. Only the
+// ocean-specific controls (Settings, day/night toggle) are hidden, since
+// they'd have nothing to act on.
 // -----------------------------------------------------------------------
-if (!('gpu' in navigator)) {
-  showError(
-    'WebGPU is unavailable',
-    'navigator.gpu was not found, so this experience cannot run. No fallback renderer is used. Please try the latest Chrome, Edge, or Safari 18+ with hardware acceleration enabled.'
-  );
-  throw new Error('WebGPU not supported: navigator.gpu is missing.');
+function enterFallbackMode(reason) {
+  console.warn(reason);
+  document.body.classList.add('webgpu-unavailable');
+  loadingOverlay.classList.add('hidden');
+  setupPanelNav();
+  setupCarousel();
+  setupContactForm();
+  setupCaseModal();
 }
 
 // =========================================================================
@@ -355,6 +362,11 @@ let running = false;
 let disposed = false;
 
 async function init() {
+  if (!('gpu' in navigator)) {
+    enterFallbackMode('WebGPU not supported: navigator.gpu is missing.');
+    return;
+  }
+
   try {
     renderer = new THREE.WebGPURenderer({ antialias: true, powerPreference: 'high-performance' });
     await renderer.init();
@@ -364,11 +376,7 @@ async function init() {
       throw new Error('Renderer initialized on a non-WebGPU backend.');
     }
   } catch (err) {
-    console.error(err);
-    showError(
-      'WebGPU failed to initialize',
-      'Your browser supports the WebGPU API, but no compatible GPU adapter could be created. This can happen with outdated graphics drivers or when hardware acceleration is disabled. No fallback renderer will be used.'
-    );
+    enterFallbackMode(`WebGPU failed to initialize: ${err && err.message ? err.message : err}`);
     return;
   }
 
@@ -898,7 +906,19 @@ function wireUI() {
     const hidden = panel.classList.toggle('hidden');
     togglePanelBtn.setAttribute('aria-expanded', String(!hidden));
     togglePanelBtn.setAttribute('aria-label', hidden ? 'Open settings' : 'Close settings');
+    const backdrop = document.getElementById('panelBackdrop');
+    if (backdrop) backdrop.classList.toggle('visible', !hidden);
   });
+
+  const panelBackdrop = document.getElementById('panelBackdrop');
+  if (panelBackdrop) {
+    panelBackdrop.addEventListener('click', () => {
+      panel.classList.add('hidden');
+      panelBackdrop.classList.remove('visible');
+      togglePanelBtn.setAttribute('aria-expanded', 'false');
+      togglePanelBtn.setAttribute('aria-label', 'Open settings');
+    });
+  }
 
   themeToggleBtn.addEventListener('click', () => setNightMode(!nightMode));
 }
@@ -991,7 +1011,7 @@ function setupPanelNav() {
     const modal = document.getElementById('caseModal');
     if (modal && modal.classList.contains('open')) return; // let the modal scroll normally
 
-    const hoveredPanel = e.target.closest && e.target.closest('.content-panel');
+    const hoveredPanel = e.target.closest && (e.target.closest('.content-panel') || e.target.closest('#panel'));
     if (hoveredPanel && hoveredPanel.scrollHeight > hoveredPanel.clientHeight + 1) return; // let it scroll internally
 
     e.preventDefault();
