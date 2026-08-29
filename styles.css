@@ -6,6 +6,7 @@
     --text-dim: #9db2c2;
     --accent: #6fd0ff;
     --accent-2: #ffd699;
+    --accent-fresh: #8ff7c9;
     --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   }
   *{ box-sizing: border-box; }
@@ -438,6 +439,87 @@
     border-color: rgba(111, 208, 255, 0.35);
     box-shadow: 0 30px 74px rgba(0,0,0,0.45);
   }
+
+  /* Home only: no glass card, no left-alignment — text floats centered
+     directly over the ocean instead. Everything else (About/Skills/
+     Work/Contact) keeps the standard .content-panel card. */
+  #panel-home{
+    left: 50%;
+    right: auto;
+    top: 50%;
+    max-width: min(720px, calc(100vw - 64px));
+    max-height: none;
+    overflow: visible;
+    text-align: center;
+    background: none;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 0;
+    transform: translate(-50%, -50%) scale(0.97);
+  }
+  /* Soft, edgeless glow — not a card, just a blurred wash of aqua/mint
+     light sitting behind the text so it reads against both the pale sky
+     and the darker water. overflow:visible above (overriding the
+     .content-panel default of overflow-y:auto) is required here — with
+     auto/hidden the blur used to get hard-clipped at the box edge and
+     read as a stray rectangle outline instead of a soft glow. */
+  #panel-home::before{
+    content: '';
+    position: absolute;
+    inset: -110px -70px;
+    background:
+      radial-gradient(ellipse 62% 60% at 50% 30%, rgba(4, 22, 20, 0.55) 0%, transparent 72%),
+      radial-gradient(ellipse 60% 55% at 50% 68%, rgba(4, 18, 22, 0.5) 0%, transparent 72%),
+      radial-gradient(ellipse 65% 55% at 50% 34%, rgba(143, 247, 201, 0.20) 0%, transparent 72%),
+      radial-gradient(ellipse 60% 50% at 50% 72%, rgba(111, 208, 255, 0.14) 0%, transparent 72%);
+    filter: blur(30px);
+    pointer-events: none;
+  }
+  #panel-home.active{
+    transform: translate(-50%, -50%) scale(1);
+  }
+  #panel-home.active:hover{
+    border-color: transparent;
+    box-shadow: none;
+  }
+  #panel-home h1{
+    font-family: 'Quicksand', var(--font-display);
+    font-weight: 700;
+  }
+  #panel-home .eyebrow{
+    text-shadow: 0 2px 12px rgba(2, 12, 10, 0.95), 0 0 26px rgba(143, 247, 201, 0.45);
+  }
+  #panel-home h1{
+    text-shadow: 0 2px 16px rgba(2, 10, 12, 0.9), 0 0 34px rgba(143, 247, 201, 0.22);
+  }
+  #panel-home .hero-tagline{
+    color: var(--text);
+    text-shadow: 0 2px 14px rgba(2, 10, 12, 0.95), 0 0 20px rgba(2, 10, 12, 0.7);
+  }
+  #panel-home .hero-tagline{
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #panel-home .hero-cta{
+    justify-content: center;
+  }
+  #panel-home .cta-primary{
+    background: linear-gradient(120deg, var(--accent) 0%, var(--accent-fresh) 100%);
+    border-color: transparent;
+    color: #052018;
+  }
+  #panel-home .cta-primary:hover, #panel-home .cta-primary:focus-visible{
+    background: linear-gradient(120deg, #8adcff 0%, #a9fbd6 100%);
+  }
+  #panel-home .status-dot{
+    background: var(--accent-fresh);
+    box-shadow: 0 0 8px rgba(143, 247, 201, 0.75);
+  }
+  #panel-home .status-pill{
+    text-shadow: 0 1px 8px rgba(2, 10, 12, 0.85);
+  }
   #panel-work{ max-width: min(900px, calc(100vw - 96px)); }
   #panel-skills{ max-width: min(760px, calc(100vw - 96px)); }
   #panel-contact{ max-width: min(620px, calc(100vw - 96px)); }
@@ -498,7 +580,7 @@
     font-size: 13px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-fresh);
   }
   .content-panel h1{
     font-family: var(--font-display);
@@ -587,39 +669,45 @@
     50%{ opacity: 0.5; transform: scale(0.82); }
   }
 
-  /* Skills panel — one flat grid of equal-size tiles. Deliberately NOT
-     grouped into per-category boxes: with different item counts per
-     category, boxed groups end up different heights and read as
-     mismatched. A uniform grid sidesteps that entirely. */
-  .skills-tiles{
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
-    gap: 10px;
-    margin-top: 4px;
+  /* Skills panel — horizontal: each category is a row with its label on
+     top and its skills as a horizontally-flowing, wrapping pill row
+     underneath. No vertical list/line — skills read left-to-right. */
+  .skills-rows{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 6px;
   }
-  .skill-tile{
+  .skills-row-head{
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 14px 16px;
-    background: rgba(255,255,255,0.045);
-    border: 1px solid var(--panel-border);
-    border-radius: 12px;
-    font-size: 14px;
+    gap: 8px;
+    margin: 0 0 10px;
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .skills-row-pills{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+  .skill-pill{
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 15px;
+    border-radius: 999px;
+    font-size: 13.5px;
     color: var(--text);
-    box-sizing: border-box;
-    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--panel-border);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   }
-  .skill-tile:hover{
-    background: rgba(255,255,255,0.09);
-    border-color: rgba(111, 208, 255, 0.35);
-    box-shadow: 0 10px 26px rgba(0,0,0,0.3);
-  }
-  @media (prefers-reduced-motion: no-preference){
-    .skill-tile{ animation: floatySmall 4.2s ease-in-out infinite; }
-    .skill-tile:nth-child(2n){ animation-delay: 0.18s; }
-    .skill-tile:nth-child(3n){ animation-delay: 0.34s; }
-  }
+  .skill-pill:hover{ transform: translateY(-2px); }
+  .skill-pill.backend:hover{ background: rgba(111,208,255,0.14); border-color: rgba(111,208,255,0.5); }
+  .skill-pill.frontend:hover{ background: rgba(255,214,153,0.14); border-color: rgba(255,214,153,0.5); }
+  .skill-pill.other:hover{ background: rgba(126,231,135,0.14); border-color: rgba(126,231,135,0.5); }
   .skill-dot{
     width: 8px;
     height: 8px;
@@ -630,27 +718,16 @@
   .skill-dot.frontend{ background: var(--accent-2); }
   .skill-dot.other{ background: #7ee787; }
 
-  .skills-legend{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-top: 16px;
-    font-size: 12px;
-    color: var(--text-dim);
-  }
-  .skills-legend span{ display: inline-flex; align-items: center; gap: 7px; }
-  .skills-legend .skill-dot{ width: 7px; height: 7px; }
-
   .resume-link{
     display: inline-flex;
     align-items: center;
     gap: 8px;
     margin-top: 22px;
     padding: 10px 18px;
-    background: rgba(111, 208, 255, 0.12);
-    border: 1px solid rgba(111, 208, 255, 0.4);
+    background: rgba(143, 247, 201, 0.12);
+    border: 1px solid rgba(143, 247, 201, 0.4);
     border-radius: 999px;
-    color: var(--accent);
+    color: var(--accent-fresh);
     text-decoration: none;
     font-size: 13.5px;
     font-weight: 500;
@@ -658,7 +735,7 @@
   }
   .resume-link svg{ width: 15px; height: 15px; }
   .resume-link:hover, .resume-link:focus-visible{
-    background: rgba(111, 208, 255, 0.22);
+    background: rgba(143, 247, 201, 0.22);
     transform: translateY(-2px);
   }
 
@@ -754,7 +831,7 @@
     font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-fresh);
   }
   .carousel-slide .live-badge{
     display: inline-flex;
@@ -873,7 +950,7 @@
     font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-fresh);
     margin-bottom: 8px;
   }
   .case-modal-body h3{
@@ -980,18 +1057,18 @@
     align-items: center;
     justify-content: center;
     padding: 11px 22px;
-    background: rgba(111, 208, 255, 0.16);
-    border: 1px solid rgba(111, 208, 255, 0.45);
+    background: linear-gradient(120deg, var(--accent) 0%, var(--accent-fresh) 100%);
+    border: 1px solid transparent;
     border-radius: 999px;
-    color: var(--accent);
+    color: #052018;
     font: inherit;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: background 0.2s ease, transform 0.2s ease;
   }
   .form-submit:hover, .form-submit:focus-visible{
-    background: rgba(111, 208, 255, 0.28);
+    background: linear-gradient(120deg, #8adcff 0%, #a9fbd6 100%);
     transform: translateY(-2px);
   }
   .form-submit:disabled{ opacity: 0.6; cursor: not-allowed; transform: none; }

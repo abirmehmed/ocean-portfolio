@@ -26,7 +26,7 @@
 <meta name="twitter:image" content="https://abirmehmed.github.io/ocean-portfolio/og-image.jpg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet" />
 
 <link rel="stylesheet" href="styles.css" />
 </head>
@@ -101,23 +101,33 @@
     <div id="panel-skills" class="content-panel" data-panel-content="skills">
       <div class="panel-float">
         <p class="eyebrow">Skills</p>
-        <div class="skills-tiles">
-          <div class="skill-tile"><span class="skill-dot backend"></span>Laravel</div>
-          <div class="skill-tile"><span class="skill-dot backend"></span>PHP</div>
-          <div class="skill-tile"><span class="skill-dot backend"></span>Livewire</div>
-          <div class="skill-tile"><span class="skill-dot backend"></span>Node.js</div>
-          <div class="skill-tile"><span class="skill-dot backend"></span>Express</div>
-          <div class="skill-tile"><span class="skill-dot frontend"></span>React.js</div>
-          <div class="skill-tile"><span class="skill-dot frontend"></span>JavaScript</div>
-          <div class="skill-tile"><span class="skill-dot frontend"></span>HTML / CSS</div>
-          <div class="skill-tile"><span class="skill-dot other"></span>WebGPU</div>
-          <div class="skill-tile"><span class="skill-dot other"></span>Three.js</div>
-          <div class="skill-tile"><span class="skill-dot other"></span>Git</div>
-        </div>
-        <div class="skills-legend">
-          <span><span class="skill-dot backend"></span>Backend</span>
-          <span><span class="skill-dot frontend"></span>Frontend</span>
-          <span><span class="skill-dot other"></span>Graphics &amp; Tools</span>
+        <div class="skills-rows">
+          <div class="skills-row">
+            <p class="skills-row-head"><span class="skill-dot backend"></span>Backend</p>
+            <div class="skills-row-pills">
+              <span class="skill-pill backend">Laravel</span>
+              <span class="skill-pill backend">PHP</span>
+              <span class="skill-pill backend">Livewire</span>
+              <span class="skill-pill backend">Node.js</span>
+              <span class="skill-pill backend">Express</span>
+            </div>
+          </div>
+          <div class="skills-row">
+            <p class="skills-row-head"><span class="skill-dot frontend"></span>Frontend</p>
+            <div class="skills-row-pills">
+              <span class="skill-pill frontend">React.js</span>
+              <span class="skill-pill frontend">JavaScript</span>
+              <span class="skill-pill frontend">HTML / CSS</span>
+            </div>
+          </div>
+          <div class="skills-row">
+            <p class="skills-row-head"><span class="skill-dot other"></span>Graphics &amp; Tools</p>
+            <div class="skills-row-pills">
+              <span class="skill-pill other">WebGPU</span>
+              <span class="skill-pill other">Three.js</span>
+              <span class="skill-pill other">Git</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
