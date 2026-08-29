@@ -1,12 +1,10 @@
 /**
- * Portfolio shell — panel navigation, the Work carousel, contact form,
- * and case-study modal. Deliberately has ZERO dependency on the ocean
- * engine (ocean.js): no references to renderer/scene/camera/U/THREE.
- * That means it runs unconditionally, whether or not WebGPU/the ocean
- * itself is available (see main.js).
+ * Portfolio shell — panel navigation, the Work project tiles, contact
+ * form, and case-study modal. Deliberately has ZERO dependency on the
+ * ocean engine (ocean.js): no references to renderer/scene/camera/U/
+ * THREE. That means it runs unconditionally, whether or not WebGPU/the
+ * ocean itself is available (see main.js).
  */
-
-const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const PANEL_ORDER = ['home', 'about', 'skills', 'work', 'contact'];
 let currentPanelIndex = 0;
@@ -25,10 +23,6 @@ function goToPanelIndex(index) {
     target.classList.add('active');
   }
   panelNavButtons.forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.panel === name)));
-
-  if (carouselApi) {
-    if (name === 'work') carouselApi.start(); else carouselApi.stop();
-  }
 }
 
 function setupPanelNav() {
@@ -118,48 +112,29 @@ const PROJECTS = [
   }
 ];
 
-// A real sliding carousel — up to 3 cards physically move, with clones
-// padding both ends of the track so it loops seamlessly forward AND
-// backward (the standard infinite-carousel technique: slide past the
-// clones, then snap invisibly back into the real range with the
-// transition switched off for that one frame). Auto-advances every 3s
-// while the Work panel is active (paused on hover/manual interaction/
-// hidden tab, skipped under reduced motion). Shows 1 card at a time on
-// narrow screens, 3 on wider ones.
-const CAROUSEL_GAP = 14;
-let carouselApi = null;
+// Scattered project tiles — each project is its own independent glass
+// card (own background/border/blur/shadow), not slides inside one big
+// shared container. A slight per-tile rotation/offset (via nth-child in
+// CSS, cycling every 3 tiles) gives the "scattered, hand-placed" look;
+// hovering straightens and lifts the tile. Fully data-driven off
+// PROJECTS, so adding a project later needs no HTML/JS changes.
+function setupWorkTiles() {
+  const container = document.getElementById('workTiles');
+  if (!container) return;
 
-function setupCarousel() {
-  const rotator = document.getElementById('workRotator');
-  const dotsWrap = document.getElementById('carouselDots');
-  const prevBtn = document.getElementById('carouselPrev');
-  const nextBtn = document.getElementById('carouselNext');
-  const N = PROJECTS.length;
-  if (!rotator || !dotsWrap || !prevBtn || !nextBtn || N === 0) return;
-
-  const w = Math.min(window.innerWidth < 700 ? 1 : 3, N);
-
-  const track = document.createElement('div');
-  track.className = 'work-track';
-  rotator.appendChild(track);
-
-  function buildSlide() {
-    const slide = document.createElement('div');
-    slide.className = 'carousel-slide';
-    slide.style.flex = `0 0 calc((100% - ${(w - 1) * CAROUSEL_GAP}px) / ${w})`;
-    slide.innerHTML =
+  function buildTile(project) {
+    const tile = document.createElement('div');
+    tile.className = 'work-tile';
+    tile.innerHTML =
       '<div class="card-thumb"><img alt="" /></div>' +
       '<div class="card-body">' +
       '<div class="card-head"><span class="tag"></span><span class="live-badge"><span class="status-dot" aria-hidden="true"></span>Live</span></div>' +
       '<h3></h3><p></p>' +
       '<div class="card-links"><a class="demo-link" target="_blank" rel="noopener noreferrer"></a><button type="button" class="case-link">Details →</button></div>' +
       '</div>';
-    return slide;
-  }
 
-  function fillSlide(slide, project) {
-    const thumb = slide.querySelector('.card-thumb');
-    const img = slide.querySelector('.card-thumb img');
+    const thumb = tile.querySelector('.card-thumb');
+    const img = tile.querySelector('.card-thumb img');
     if (project.image) {
       img.src = project.image;
       img.alt = `${project.title} screenshot`;
@@ -167,12 +142,12 @@ function setupCarousel() {
     } else {
       thumb.style.display = 'none';
     }
-    slide.querySelector('.tag').textContent = project.tag;
-    slide.querySelector('.live-badge').style.visibility = project.href ? 'visible' : 'hidden';
-    slide.querySelector('h3').textContent = project.title;
-    slide.querySelector('p').textContent = project.description;
-    slide.querySelector('.case-link').addEventListener('click', () => openCaseModal(project));
-    const link = slide.querySelector('.demo-link');
+    tile.querySelector('.tag').textContent = project.tag;
+    tile.querySelector('.live-badge').style.visibility = project.href ? 'visible' : 'hidden';
+    tile.querySelector('h3').textContent = project.title;
+    tile.querySelector('p').textContent = project.description;
+    tile.querySelector('.case-link').addEventListener('click', () => openCaseModal(project));
+    const link = tile.querySelector('.demo-link');
     if (!project.linkText) {
       link.style.display = 'none';
     } else {
@@ -188,87 +163,10 @@ function setupCarousel() {
       link.removeAttribute('target');
       link.removeAttribute('rel');
     }
+    return tile;
   }
 
-  // Track order: [leading clones of the last w] + [real items] + [trailing clones of the first w]
-  const order = [];
-  for (let i = N - w; i < N; i++) order.push(i);
-  for (let i = 0; i < N; i++) order.push(i);
-  for (let i = 0; i < w; i++) order.push(i);
-
-  const slideEls = order.map((projectIndex) => {
-    const slide = buildSlide();
-    fillSlide(slide, PROJECTS[projectIndex]);
-    track.appendChild(slide);
-    return slide;
-  });
-
-  PROJECTS.forEach((_, i) => {
-    const dot = document.createElement('button');
-    dot.type = 'button';
-    dot.setAttribute('aria-label', `Show project ${i + 1}`);
-    dot.addEventListener('click', () => { goTo(w + i); restart(); });
-    dotsWrap.appendChild(dot);
-  });
-  const dots = Array.from(dotsWrap.children);
-
-  let index = w; // first real item
-  let animating = false;
-  let autoplayTimer = null;
-
-  function stepPx() {
-    return slideEls[0].getBoundingClientRect().width + CAROUSEL_GAP;
-  }
-
-  function apply(withTransition) {
-    track.style.transition = withTransition ? 'transform 0.6s cubic-bezier(0.22, 0.8, 0.32, 1)' : 'none';
-    track.style.transform = `translateX(-${index * stepPx()}px)`;
-  }
-
-  function updateDots() {
-    const realIndex = ((index - w) % N + N) % N;
-    dots.forEach((d, i) => d.classList.toggle('active', i === realIndex));
-  }
-
-  function goTo(newIndex) {
-    if (animating || N <= 1) return;
-    animating = true;
-    index = newIndex;
-    apply(true);
-    updateDots();
-  }
-
-  track.addEventListener('transitionend', (e) => {
-    if (e.propertyName !== 'transform') return;
-    animating = false;
-    if (index >= w + N) { index -= N; apply(false); }
-    else if (index < w) { index += N; apply(false); }
-  });
-
-  function next() { goTo(index + 1); }
-  function prev() { goTo(index - 1); }
-
-  function stop() {
-    if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
-  }
-  function start() {
-    stop();
-    if (prefersReducedMotion || N <= 1) return;
-    autoplayTimer = setInterval(next, 3000);
-  }
-  function restart() {
-    if (panelsMap.work && panelsMap.work.classList.contains('active')) start();
-  }
-
-  prevBtn.addEventListener('click', () => { prev(); restart(); });
-  nextBtn.addEventListener('click', () => { next(); restart(); });
-  rotator.addEventListener('mouseenter', stop);
-  rotator.addEventListener('mouseleave', restart);
-  window.addEventListener('resize', () => apply(false));
-
-  apply(false);
-  updateDots();
-  carouselApi = { start, stop, restart };
+  PROJECTS.forEach((project) => container.appendChild(buildTile(project)));
 }
 
 // -------------------------------------------------------------------------
@@ -394,21 +292,11 @@ function setupCaseModal() {
 }
 
 // -------------------------------------------------------------------------
-// Public entry point — called unconditionally from main.js. Registers its
-// own visibilitychange listener (independent from ocean.js's) so the
-// carousel autoplay pauses/resumes on tab visibility without any import
-// between the two modules — the browser supports multiple listeners on
-// the same event fine.
+// Public entry point — called unconditionally from main.js.
 // -------------------------------------------------------------------------
 export function initPortfolio() {
   setupPanelNav();
-  setupCarousel();
+  setupWorkTiles();
   setupContactForm();
   setupCaseModal();
-
-  document.addEventListener('visibilitychange', () => {
-    if (!carouselApi) return;
-    if (document.hidden) carouselApi.stop();
-    else carouselApi.restart();
-  });
 }

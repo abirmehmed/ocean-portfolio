@@ -26,7 +26,7 @@
 <meta name="twitter:image" content="https://abirmehmed.github.io/ocean-portfolio/og-image.jpg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Quicksand:wght@600;700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
 
 <link rel="stylesheet" href="styles.css" />
 </head>
@@ -81,20 +81,30 @@
     </div>
 
     <div id="panel-about" class="content-panel" data-panel-content="about">
-      <div class="panel-float">
-        <p class="eyebrow">About</p>
-        <div class="avatar-float">
-          <div class="avatar-frame">
-            <img src="avatar.jpg" alt="Abir Mehmed" />
+      <div class="panel-float about-grid">
+        <div class="about-col-photo">
+          <div class="avatar-float">
+            <div class="avatar-frame">
+              <img src="avatar.jpg" alt="Abir Mehmed" />
+            </div>
           </div>
+          <ul class="quick-facts">
+            <li><span class="qf-label">Focus</span><span class="qf-value">Full-stack web apps</span></li>
+            <li><span class="qf-label">Backend</span><span class="qf-value">Laravel &middot; PHP &middot; Livewire</span></li>
+            <li><span class="qf-label">Frontend</span><span class="qf-value">React &middot; Node &middot; Express</span></li>
+            <li><span class="qf-label">Availability</span><span class="qf-value">Freelance &amp; full-time</span></li>
+          </ul>
         </div>
-        <p class="panel-body wave-text"><span class="line">Full-stack developer focused on shipping real, working products —</span><span class="line">POS systems, e-commerce platforms, and interactive web experiences.</span><span class="line">Comfortable across the stack, from Laravel/PHP backends to React frontends. Currently taking on freelance projects and open to full-time roles.</span></p>
-        <a class="resume-link" href="resume.pdf" download>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M4 19h16" />
-          </svg>
-          Download Resume
-        </a>
+        <div class="about-col-bio">
+          <p class="eyebrow">About</p>
+          <p class="panel-body wave-text"><span class="line">Full-stack developer focused on shipping real, working products —</span><span class="line">POS systems, e-commerce platforms, and interactive web experiences.</span><span class="line">Comfortable across the stack, from Laravel/PHP backends to React frontends. Currently taking on freelance projects and open to full-time roles.</span></p>
+          <a class="resume-link" href="resume.pdf" download>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M4 19h16" />
+            </svg>
+            Download Resume
+          </a>
+        </div>
       </div>
     </div>
 
@@ -132,17 +142,10 @@
       </div>
     </div>
 
-    <div id="panel-work" class="content-panel" data-panel-content="work">
+    <div id="panel-work" class="content-panel work-panel" data-panel-content="work">
       <div class="panel-float">
         <p class="eyebrow">Selected Work</p>
-        <div class="carousel">
-          <div class="work-rotator" id="workRotator"></div>
-          <div class="carousel-controls">
-            <button id="carouselPrev" class="carousel-arrow" type="button" aria-label="Previous project">‹</button>
-            <div class="carousel-dots" id="carouselDots"></div>
-            <button id="carouselNext" class="carousel-arrow" type="button" aria-label="Next project">›</button>
-          </div>
-        </div>
+        <div class="work-tiles" id="workTiles"></div>
       </div>
     </div>
 
