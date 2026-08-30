@@ -461,6 +461,18 @@
     padding: 0;
     transform: translate(-50%, -50%) scale(0.97);
   }
+  /* #panel-home itself stays uncapped/unclipped (overflow: visible above)
+     so the glow ::before can bleed past the text without a hard edge —
+     see that block below. But the actual content still needs to respect
+     the nav's real height, or long copy centers itself right up under
+     the nav on short/mobile viewports. Capping the INNER .panel-float
+     instead of the outer panel gets both: the glow stays uncropped, and
+     the text scrolls internally within the space below the nav rather
+     than growing the whole panel upward past it. */
+  #panel-home .panel-float{
+    max-height: calc(100svh - var(--nav-h) - 24px);
+    overflow-y: auto;
+  }
   /* Soft, edgeless glow — not a card, just a blurred wash of aqua/mint
      light sitting behind the text so it reads against both the pale sky
      and the darker water. overflow:visible above (overriding the
@@ -856,6 +868,15 @@
     max-height: none;
     max-width: min(1040px, calc(100vw - 96px));
   }
+  /* Same reasoning as #panel-home above: the outer panel stays uncapped
+     so tile rotation/hover-lift/shadow never gets hard-clipped, but the
+     inner .panel-float (eyebrow + the tiles grid) gets the real
+     nav-clearance cap so a tall stack of tiles scrolls internally below
+     the nav instead of pushing the first tile up underneath it. */
+  .work-panel .panel-float{
+    max-height: calc(100svh - var(--nav-h) - 24px);
+    overflow-y: auto;
+  }
   #panel-work.active:hover{ border-color: transparent; box-shadow: none; }
   .work-panel .eyebrow{
     text-shadow: 0 2px 10px rgba(2, 10, 12, 0.85);
@@ -892,7 +913,7 @@
      Tiles cycle through 3 tilt variants for the scatter look, but each
      gets its OWN delay (not grouped by 3) so no two tiles bob in sync —
      a proper independent, continuous wobble rather than a block bob. */
-  @media (prefers-reduced-motion: no-preference){
+  @media (prefers-reduced-motion: no-preference) and (min-width: 821px){
     .work-tile{
       animation-duration: 4.6s;
       animation-timing-function: ease-in-out;
