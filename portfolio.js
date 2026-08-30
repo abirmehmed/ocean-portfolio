@@ -31,6 +31,22 @@ function setupPanelNav() {
     panelsMap[el.dataset.panelContent] = el;
   });
 
+  // The nav wraps to 2+ lines on narrow screens (brand on its own row,
+  // links below), so its real height varies a lot by viewport/font size
+  // — a guessed fixed pixel value doesn't hold up. Measure it for real
+  // and expose it as --nav-h so panel centering/max-height (see
+  // styles.css) can reserve exactly that much space instead of
+  // sometimes rendering underneath the nav.
+  const nav = document.querySelector('.site-nav');
+  function syncNavHeight() {
+    if (!nav) return;
+    document.documentElement.style.setProperty('--nav-h', `${nav.getBoundingClientRect().height}px`);
+  }
+  syncNavHeight();
+  window.addEventListener('resize', syncNavHeight);
+  window.addEventListener('orientationchange', syncNavHeight);
+  if ('fonts' in document) document.fonts.ready.then(syncNavHeight).catch(() => {});
+
   panelNavButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const idx = PANEL_ORDER.indexOf(btn.dataset.panel);

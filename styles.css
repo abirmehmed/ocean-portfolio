@@ -8,6 +8,7 @@
     --accent-2: #ffd699;
     --accent-fresh: #8ff7c9;
     --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    --nav-h: 72px; /* fallback until JS measures the real nav height (see portfolio.js syncNavHeight) */
   }
   *{ box-sizing: border-box; }
   html, body{
@@ -402,9 +403,9 @@
   .content-panel{
     position: absolute;
     left: clamp(20px, 5vw, 56px);
-    top: 50%;
+    top: calc(50% + var(--nav-h) / 2);
     max-width: 600px;
-    max-height: calc(100vh - 110px);
+    max-height: calc(100svh - var(--nav-h) - 24px);
     overflow-y: auto;
     background: rgba(8, 13, 21, 0.4);
     backdrop-filter: blur(20px) saturate(1.2);
@@ -447,7 +448,7 @@
   #panel-home{
     left: 50%;
     right: auto;
-    top: 50%;
+    top: calc(50% + var(--nav-h) / 2);
     max-width: min(720px, calc(100vw - 64px));
     max-height: none;
     overflow: visible;
