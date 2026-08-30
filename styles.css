@@ -527,8 +527,14 @@
 
   /* Owns the idle up/down bob, kept on a separate element from
      .content-panel so it never fights that element's own slide-in
-     transform. */
-  @media (prefers-reduced-motion: no-preference){
+     transform. Disabled below 820px: on narrow viewports panels often
+     need to scroll (overflow-y: auto on .content-panel), and a bob that
+     nudges content upward at rest (scrollTop 0) clips whatever sits at
+     the very top of the panel against the scroll container's edge —
+     that's the recurring "eyebrow/photo cut off at the top" bug seen
+     across Home/Work/Skills/About. Disabling it here removes the cause
+     everywhere at once instead of patching each panel individually. */
+  @media (prefers-reduced-motion: no-preference) and (min-width: 821px){
     .panel-float{ animation: floaty 5.5s ease-in-out infinite; }
   }
 
@@ -793,7 +799,8 @@
   @media (max-width: 640px){
     .about-grid{ grid-template-columns: 1fr; }
     .about-col-photo{ align-items: center; text-align: center; }
-    .quick-facts{ max-width: 320px; }
+    .quick-facts{ max-width: 320px; margin-left: auto; margin-right: auto; }
+    .quick-facts li{ align-items: center; }
   }
 
   /* Idle float + hover lift for the avatar photo. */
@@ -802,7 +809,7 @@
     height: 108px;
     margin-bottom: 20px;
   }
-  @media (prefers-reduced-motion: no-preference){
+  @media (prefers-reduced-motion: no-preference) and (min-width: 821px){
     .avatar-float{ animation: floaty 4.5s ease-in-out infinite; }
   }
   @keyframes floaty{
