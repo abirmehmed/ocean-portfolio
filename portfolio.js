@@ -47,10 +47,39 @@ function setupPanelNav() {
   window.addEventListener('orientationchange', syncNavHeight);
   if ('fonts' in document) document.fonts.ready.then(syncNavHeight).catch(() => {});
 
+  // Mobile hamburger dropdown (hidden entirely on desktop via CSS, where
+  // .nav-menu-toggle is display:none and .nav-menu is display:contents).
+  const navMenuToggle = document.getElementById('navMenuToggle');
+  const navMenu = document.getElementById('navMenu');
+  function closeNavMenu() {
+    if (!navMenu || !navMenuToggle) return;
+    navMenu.classList.remove('open');
+    navMenuToggle.setAttribute('aria-expanded', 'false');
+  }
+  function openNavMenu() {
+    if (!navMenu || !navMenuToggle) return;
+    navMenu.classList.add('open');
+    navMenuToggle.setAttribute('aria-expanded', 'true');
+  }
+  if (navMenuToggle && navMenu) {
+    navMenuToggle.addEventListener('click', () => {
+      if (navMenu.classList.contains('open')) closeNavMenu(); else openNavMenu();
+    });
+    document.addEventListener('click', (e) => {
+      if (!navMenu.classList.contains('open')) return;
+      if (navMenu.contains(e.target) || navMenuToggle.contains(e.target)) return;
+      closeNavMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeNavMenu();
+    });
+  }
+
   panelNavButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const idx = PANEL_ORDER.indexOf(btn.dataset.panel);
       if (idx !== -1) goToPanelIndex(idx);
+      closeNavMenu();
     });
   });
 

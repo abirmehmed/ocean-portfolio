@@ -370,7 +370,13 @@
     transition: color 0.2s ease;
   }
   .brand:hover, .brand:focus-visible{ color: var(--accent); }
-  .nav-links{ display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; row-gap: 8px; }
+  .nav-links{ position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; row-gap: 8px; }
+  /* Desktop: the hamburger is hidden and .nav-menu is just a transparent
+     grouping (display:contents) so the 5 links lay out inline in
+     .nav-links exactly as if the wrapper weren't there. Mobile gets the
+     hamburger + a dropdown instead — see the 820px query below. */
+  .nav-menu-toggle{ display: none; }
+  .nav-menu{ display: contents; }
   .nav-link{
     position: relative;
     color: rgba(232, 241, 247, 0.78);
@@ -445,6 +451,14 @@
   /* Home only: no glass card, no left-alignment — text floats centered
      directly over the ocean instead. Everything else (About/Skills/
      Work/Contact) keeps the standard .content-panel card. */
+  /* Everything below is desktop-only (≥821px). On mobile, #panel-home
+     deliberately falls back to the plain default .content-panel card —
+     same treatment as About/Skills/Contact, which is already proven to
+     work correctly on small screens. That's the whole point: rather
+     than forcing this "no card, glow, true-centered" desktop effect to
+     also behave at 375px, mobile gets a simpler, different, more robust
+     layout instead. */
+  @media (min-width: 821px){
   #panel-home{
     left: 50%;
     right: auto;
@@ -534,6 +548,8 @@
   #panel-home .status-pill{
     text-shadow: 0 1px 8px rgba(2, 10, 12, 0.85);
   }
+  } /* end desktop-only #panel-home block */
+
   #panel-about{ max-width: min(760px, calc(100vw - 96px)); }
   #panel-skills{ width: min(760px, calc(100vw - 96px)); }
   #panel-contact{ width: min(820px, calc(100vw - 96px)); }
@@ -853,10 +869,14 @@
     display: block;
   }
 
-  /* Work: scattered project tiles — no shared boxed container (see
-     #panel-work override below), each .work-tile is its own independent
-     glass card with a slight per-item rotation/offset for a scattered,
-     hand-placed feel instead of a uniform grid. */
+  /* Work: on desktop (≥821px) — scattered project tiles with no shared
+     boxed container (see #panel-work override below), each .work-tile
+     independently rotated for a scattered, hand-placed feel. On mobile,
+     #panel-work deliberately falls back to a plain default .content-panel
+     card (like About/Skills/Contact) holding a plain stacked list of
+     tiles — same reasoning as #panel-home above: simpler and more
+     robust beats forcing the desktop effect into a tight mobile layout. */
+  @media (min-width: 821px){
   #panel-work{
     background: none;
     border: none;
@@ -881,6 +901,7 @@
   .work-panel .eyebrow{
     text-shadow: 0 2px 10px rgba(2, 10, 12, 0.85);
   }
+  }
   .work-tiles{
     display: flex;
     flex-wrap: wrap;
@@ -902,9 +923,11 @@
     box-shadow: 0 16px 34px rgba(0,0,0,0.32);
     transition: transform 0.3s cubic-bezier(0.22, 0.8, 0.32, 1), border-color 0.25s ease, box-shadow 0.3s ease, background 0.25s ease;
   }
+  @media (min-width: 821px){
   .work-tile:nth-child(3n+1){ transform: rotate(-1.4deg) translateY(-4px); }
   .work-tile:nth-child(3n+2){ transform: rotate(1deg) translateY(16px); }
   .work-tile:nth-child(3n+3){ transform: rotate(-0.7deg) translateY(2px); }
+  }
   /* Wave-like idle wobble: each tile bobs up and down continuously,
      rotation baked into the keyframes (an animation always owns the
      transform property outright, so a plain static transform on the
@@ -1238,8 +1261,50 @@
     transition: opacity 0.4s ease, transform 0.4s ease;
   }
 
-  @media (max-width: 700px){
-    .nav-link{ margin-left: 16px; }
+  @media (max-width: 820px){
+    /* Mobile nav: hide the inline links, show a hamburger that toggles
+       a dropdown instead of letting 5 links + brand wrap across 2-3
+       rows (that wrapping was the whole reason panel content used to
+       render underneath the nav — its height was unpredictable). */
+    .nav-menu-toggle{
+      display: inline-flex;
+      order: 3;
+    }
+    .nav-menu-toggle .icon-close{ display: none; }
+    .nav-menu-toggle[aria-expanded="true"] .icon-burger{ display: none; }
+    .nav-menu-toggle[aria-expanded="true"] .icon-close{ display: block; }
+    #themeToggle{ order: 4; }
+    #settingsToggle{ order: 5; }
+    .nav-menu{
+      display: none;
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      flex-direction: column;
+      min-width: 180px;
+      padding: 10px;
+      gap: 2px;
+      background: rgba(8, 13, 21, 0.92);
+      backdrop-filter: blur(16px) saturate(1.15);
+      -webkit-backdrop-filter: blur(16px) saturate(1.15);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      box-shadow: 0 20px 44px rgba(0,0,0,0.4);
+    }
+    .nav-menu.open{ display: flex; }
+    .nav-menu .nav-link{
+      margin-left: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-menu .nav-link::after{ display: none; }
+    .nav-menu .nav-link:hover, .nav-menu .nav-link:focus-visible,
+    .nav-menu .nav-link[aria-pressed="true"]{
+      background: rgba(111, 208, 255, 0.12);
+      color: var(--accent);
+    }
   }
 
   @media (max-width: 560px){
