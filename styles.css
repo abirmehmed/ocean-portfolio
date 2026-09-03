@@ -1265,15 +1265,30 @@
   .contact-form{ margin: 6px 0 4px; }
   /* Contact panel — split layout: info/links on the left, the form on
      the right. Stacks to one column below 680px. */
+  /* Named grid areas (not just column count) so the VISUAL order is
+     always intro -> form -> closing, regardless of how many columns
+     are active at a given width. Previously this was just two DOM-order
+     divs (info-with-footer, then form) in a grid — fine when they sit
+     side by side, but the moment the grid collapses to a single column
+     (both the ≤680px mobile case and the ≥821px floating case below),
+     they stacked in DOM order, which put the footer/socials block
+     ABOVE the form. Named areas fix that at every breakpoint at once. */
   .contact-grid{
     display: grid;
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
-    gap: clamp(28px, 4vw, 48px);
+    grid-template-columns: 1fr;
+    grid-template-areas: "intro" "form" "closing";
+    gap: clamp(20px, 4vw, 32px);
     align-items: start;
   }
-  .contact-col-form{ padding-top: 2px; }
-  @media (max-width: 680px){
-    .contact-grid{ grid-template-columns: 1fr; }
+  .contact-col-intro{ grid-area: intro; }
+  .contact-col-form{ grid-area: form; padding-top: 2px; }
+  .contact-col-closing{ grid-area: closing; }
+  @media (min-width: 681px) and (max-width: 820px){
+    .contact-grid{
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+      grid-template-areas: "intro form" "closing form";
+      gap: clamp(28px, 4vw, 48px);
+    }
   }
   /* Desktop only (≥821px): no box at all — same "floats over the ocean"
      treatment as #panel-home, single centered column instead of the
@@ -1317,8 +1332,14 @@
     #panel-contact .eyebrow, #panel-contact h2, #panel-contact .panel-body{
       text-shadow: 0 2px 14px rgba(2, 10, 12, 0.9), 0 0 24px rgba(143, 247, 201, 0.2);
     }
+    #panel-contact .panel-body{ color: var(--text); }
+    #panel-contact .form-row label,
+    #panel-contact .contact-or,
+    #panel-contact .footer-note{
+      color: var(--text);
+      text-shadow: 0 2px 10px rgba(2, 10, 12, 0.95), 0 0 14px rgba(2, 10, 12, 0.7);
+    }
     .contact-grid{
-      grid-template-columns: 1fr;
       justify-items: center;
       gap: 26px;
     }
